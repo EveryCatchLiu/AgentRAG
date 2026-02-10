@@ -1,26 +1,26 @@
 ---
-description: Onboard Claude Code into the codebase
+description: 將 Claude Code 引入代碼庫
 ---
 
-# Context
+# 上下文
 
-## Process
+## 流程
 
-1. **Scan structure**
-   - Run `git ls-files` to see all tracked files
+1. **掃描結構**
+   - 運行 `git ls-files` 查看所有追蹤的文件
 
-2. **Read key files**
-   - CLAUDE.md, PRD.md, and any other architecture docs
-   - Entry points and config files
-   - Core schemas/models
+2. **閱讀關鍵文件**
+   - CLAUDE.md、PRD.md 和其他架構文檔
+   - 入口點和配置文件
+   - 核心模式/模型
 
-3. **Check state**
-   - Run `git status` and `git log -10 --oneline`
+3. **檢查狀態**
+   - 運行 `git status` 和 `git log -10 --oneline`
 
-## Output
+## 輸出
 
-Provide a brief summary:
-- What this project does
-- Tech stack
-- How it's organised
-- Current branch and recent activity
+提供簡要摘要：
+- 這個項目做什麼
+- 技術棧
+- 如何組織的
+- 當前分支和近期活動

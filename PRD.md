@@ -1,165 +1,165 @@
-# Agentic RAG Masterclass - PRD
+# Agentic RAG 大師課 - 產品需求文件
 
-## What We're Building
+## 我們要構建什麼
 
-A RAG application with two interfaces:
-1. **Chat** (default view) - Threaded conversations with retrieval-augmented responses
-2. **Ingestion** - Upload files manually, track processing, manage documents
+一個具有兩個界面的 RAG 應用程式：
+1. **聊天**（預設視圖）- 帶有檢索增強回應的線程對話
+2. **文件導入** - 手動上傳文件、追蹤處理進度、管理文件
 
-This is **not** an automated pipeline with connectors. Files are uploaded manually via drag-and-drop. Configuration is via environment variables, no admin UI.
+這**不是**帶有連接器的自動化管道。文件通過拖放方式手動上傳。通過環境變數進行配置，沒有管理界面。
 
-## Target Users
+## 目標用戶
 
-Technically-minded people who want to build production RAG systems using AI coding tools (Claude Code, Cursor, etc.). They don't need to know Python or React - that's the AI's job.
+想要使用 AI 編程工具（Claude Code、Cursor 等）構建生產級 RAG 系統的技術人員。他們不需要懂 Python 或 React - 那是 AI 的工作。
 
-**They need to understand:**
-- RAG concepts deeply (chunking, embeddings, retrieval, reranking)
-- Codebase structure (what sits where, how pieces connect)
-- How to direct AI to build what they need
-- How to direct AI to fix things when they break
+**他們需要理解的：**
+- 深入理解 RAG 概念（分塊、嵌入、檢索、重排序）
+- 代碼庫結構（什麼在哪裡，各部分如何連接）
+- 如何指導 AI 構建他們需要的東西
+- 如何指導 AI 修復出現的問題
 
-## Scope
+## 範圍
 
-### In Scope
-- ✅ Document ingestion and processing
-- ✅ Vector search with pgvector
-- ✅ Hybrid search (keyword + vector)
-- ✅ Reranking
-- ✅ Metadata extraction
-- ✅ Record management (deduplication)
-- ✅ Multi-format support (PDF, DOCX, HTML, Markdown)
-- ✅ Text-to-SQL tool
-- ✅ Web search fallback
-- ✅ Sub-agents with isolated context
-- ✅ Chat with threads and memory
-- ✅ Streaming responses
-- ✅ Auth with RLS
+### 在範圍內
+- ✅ 文件導入和處理
+- ✅ 使用 pgvector 的向量搜索
+- ✅ 混合搜索（關鍵詞 + 向量）
+- ✅ 重排序
+- ✅ 元數據提取
+- ✅ 記錄管理（去重）
+- ✅ 多格式支持（PDF、DOCX、HTML、Markdown）
+- ✅ 文本轉 SQL 工具
+- ✅ 網頁搜索回退
+- ✅ 具有隔離上下文的子代理
+- ✅ 帶線程和記憶的聊天
+- ✅ 流式回應
+- ✅ 帶有行級安全性的認證
 
-### Out of Scope
-- ❌ Knowledge graphs / GraphRAG
-- ❌ Code execution / sandboxing
-- ❌ Image/audio/video processing
-- ❌ Fine-tuning
-- ❌ Multi-tenant admin features
-- ❌ Billing/payments
-- ❌ Data connectors (Google Drive, SFTP, APIs, webhooks)
-- ❌ Scheduled/automated ingestion
-- ❌ Admin UI (config via env vars)
+### 不在範圍內
+- ❌ 知識圖譜 / GraphRAG
+- ❌ 代碼執行 / 沙箱
+- ❌ 圖片/音頻/視頻處理
+- ❌ 微調
+- ❌ 多租戶管理功能
+- ❌ 計費/支付
+- ❌ 數據連接器（Google Drive、SFTP、API、Webhook）
+- ❌ 定時/自動化導入
+- ❌ 管理界面（通過環境變數配置）
 
-## Stack
+## 技術棧
 
-| Layer | Choice |
-|-------|--------|
-| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui |
-| Backend | Python + FastAPI |
-| Database | Supabase (Postgres + pgvector + Auth + Storage + Realtime) |
-| LLM (Module 1) | OpenAI Responses API (managed threads + file_search) |
-| LLM (Module 2+) | Any OpenAI-compatible endpoint (OpenRouter, Ollama, LM Studio, etc.) |
-| Observability | LangSmith |
+| 層次 | 選擇 |
+|------|------|
+| 前端 | React + TypeScript + Vite + Tailwind + shadcn/ui |
+| 後端 | Python + FastAPI |
+| 數據庫 | Supabase（Postgres + pgvector + 認證 + 存儲 + 實時） |
+| LLM（模組 1） | OpenAI Responses API（託管線程 + 文件搜索） |
+| LLM（模組 2+） | 任何 OpenAI 兼容端點（OpenRouter、Ollama、LM Studio 等） |
+| 可觀測性 | LangSmith |
 
-## Constraints
+## 約束條件
 
-- No LLM frameworks - raw OpenAI SDK using the standard Chat Completions API (OpenAI-compatible), Pydantic for structured outputs
-- Row-Level Security on all tables - users only see their own data
-- Streaming chat via SSE
-- Ingestion status via Supabase Realtime
-
----
-
-## Module 1: The App Shell + Observability
-
-**Build:** Auth, chat UI, OpenAI Responses API (manages threads + file_search), LangSmith tracing
-
-**Learn:** What RAG is, why managed RAG exists, its limitations (OpenAI handles memory and retrieval - black box)
-
-**Note:** The Responses API is OpenAI-specific. It provides managed threads and built-in file search, but locks you into OpenAI. Module 2 transitions to the standard Chat Completions API for provider flexibility.
+- 不使用 LLM 框架 - 直接使用 OpenAI SDK 的標準 Chat Completions API（OpenAI 兼容），使用 Pydantic 進行結構化輸出
+- 所有表都需要行級安全性 - 用戶只能看到自己的數據
+- 通過 SSE 進行流式聊天
+- 通過 Supabase Realtime 進行導入狀態更新
 
 ---
 
-## Architectural Decision: Module 1 → Module 2 Transition
+## 模組 1：應用外殼 + 可觀測性
 
-At the end of Module 1, you have a working chat app using OpenAI's **Responses API**—a managed solution where OpenAI handles threads, memory, and file search. In Module 2, you switch to the standard **Chat Completions API** to support any OpenAI-compatible provider (OpenRouter, Ollama, LM Studio, etc.).
+**構建：** 認證、聊天 UI、OpenAI Responses API（管理線程 + 文件搜索）、LangSmith 追蹤
 
-**The decision you need to make:** What do you do with the Responses API code? Here are two common approaches, but you're not limited to these—come up with your own if it makes sense for your use case.
+**學習：** 什麼是 RAG、為什麼存在託管 RAG、它的局限性（OpenAI 處理記憶和檢索 - 黑盒）
 
-| Option | Approach | Pros | Cons |
-|--------|----------|------|------|
-| **A: Replace** | Remove Responses API code entirely, rebuild on Chat Completions | Clean codebase, single pattern, easier to maintain | Lose the ability to use OpenAI's managed RAG |
-| **B: Dual Support** | Keep Responses API alongside Chat Completions, configurable per request | Flexibility to use either approach, compare them side-by-side | More complex codebase, two patterns to understand |
-
-There is no right answer—this is a real architectural choice you'll face in building production systems.
-
-**In the video, I chose Option A**—completely removing the Responses API code from the codebase and any related schema from the database. This keeps things simple and focused on the OpenAI-compatible Chat Completions pattern going forward.
-
-**This is a lesson in steering Claude Code**: you need to clearly communicate your decision and guide the AI to implement it correctly. Be explicit about what you want removed, refactored, or kept.
+**備注：** Responses API 是 OpenAI 特有的。它提供託管線程和內建文件搜索，但將你鎖定在 OpenAI。模組 2 過渡到標準 Chat Completions API 以實現提供商靈活性。
 
 ---
 
-## Module 2: BYO Retrieval + Memory
+## 架構決策：模組 1 → 模組 2 過渡
 
-**Prerequisites:** Complete the architectural decision above.
+在模組 1 結束時，你有一個使用 OpenAI **Responses API** 的工作聊天應用——這是一個由 OpenAI 處理線程、記憶和文件搜索的託管解決方案。在模組 2 中，你切換到標準 **Chat Completions API**，以支持任何 OpenAI 兼容的提供商（OpenRouter、Ollama、LM Studio 等）。
 
-**Build:** Ingestion UI, file storage, chunking → embedding → pgvector, retrieval tool, Chat Completions API integration (OpenRouter/Ollama/LM Studio), chat history storage (stateless API - you manage memory now), realtime ingestion status
+**你需要做的決定：** 如何處理 Responses API 代碼？以下是兩種常見方法，但你不限於這些——如果對你的用例有意義，可以提出自己的方案。
 
-**Learn:** Chunking, embeddings, vector search, tool calling, relevance thresholds, managing conversation history, **steering AI agents through architectural refactoring**
+| 選項 | 方法 | 優點 | 缺點 |
+|------|------|------|------|
+| **A：替換** | 完全移除 Responses API 代碼，基於 Chat Completions 重建 | 代碼庫乾淨、單一模式、更易維護 | 失去使用 OpenAI 託管 RAG 的能力 |
+| **B：雙重支持** | 保留 Responses API 與 Chat Completions 並存，可按請求配置 | 靈活使用任一方法，可並列比較 | 代碼庫更複雜，需理解兩種模式 |
 
----
+沒有正確答案——這是構建生產系統時你將面臨的真實架構選擇。
 
-## Module 3: Record Manager
+**在視頻中，我選擇了選項 A**——完全從代碼庫中移除 Responses API 代碼以及數據庫中任何相關的模式。這使事情保持簡單，專注於之後的 OpenAI 兼容 Chat Completions 模式。
 
-**Build:** Content hashing, detect changes, only process what's new/modified
-
-**Learn:** Why naive ingestion duplicates, incremental updates
-
----
-
-## Module 4: Metadata Extraction
-
-**Build:** LLM extracts structured metadata, filter retrieval by metadata
-
-**Learn:** Structured extraction, schema design, metadata-enhanced retrieval
+**這是一堂關於如何引導 Claude Code 的課**：你需要清楚地傳達你的決定，並引導 AI 正確實施。明確說明你想要移除、重構或保留什麼。
 
 ---
 
-## Module 5: Multi-Format Support
+## 模組 2：自建檢索 + 記憶
 
-**Build:** PDF/DOCX/HTML/Markdown via docling, cascade deletes
+**前提條件：** 完成上述架構決策。
 
-**Learn:** Document parsing challenges, format considerations
+**構建：** 導入 UI、文件存儲、分塊 → 嵌入 → pgvector、檢索工具、Chat Completions API 集成（OpenRouter/Ollama/LM Studio）、聊天歷史存儲（無狀態 API - 現在由你管理記憶）、實時導入狀態
 
----
-
-## Module 6: Hybrid Search & Reranking
-
-**Build:** Keyword + vector search, RRF combination, reranking
-
-**Learn:** Why vector alone isn't enough, hybrid strategies, reranking
+**學習：** 分塊、嵌入、向量搜索、工具調用、相關性閾值、管理對話歷史、**引導 AI 代理進行架構重構**
 
 ---
 
-## Module 7: Additional Tools
+## 模組 3：記錄管理器
 
-**Build:** Text-to-SQL tool (query structured data), web search fallback (when docs don't have the answer)
+**構建：** 內容哈希、檢測變更、只處理新增/修改的內容
 
-**Learn:** Multi-tool agents, routing between structured/unstructured data, graceful fallbacks, attribution for trust
-
----
-
-## Module 8: Sub-Agents
-
-**Build:** Detect full-document scenarios, spawn isolated sub-agent with its own tools, nested tool call display in UI, show reasoning from both main agent and sub-agents
-
-**Learn:** Context management, agent delegation, hierarchical agent display, when to isolate
+**學習：** 為什麼樸素導入會產生重複、增量更新
 
 ---
 
-## Success Criteria
+## 模組 4：元數據提取
 
-By the end, students should have:
-- ✅ A working RAG application they built with AI assistance
-- ✅ Deep understanding of RAG concepts (chunking, embedding, retrieval, reranking)
-- ✅ Understanding of codebase structure - what lives where, how pieces connect
-- ✅ Ability to direct AI coding tools to build new features
-- ✅ Ability to direct AI coding tools to debug and fix issues
-- ✅ Experience with agentic patterns (multi-tool, sub-agents)
-- ✅ Observability set up from day one
+**構建：** LLM 提取結構化元數據、按元數據過濾檢索
+
+**學習：** 結構化提取、模式設計、元數據增強檢索
+
+---
+
+## 模組 5：多格式支持
+
+**構建：** 通過 docling 支持 PDF/DOCX/HTML/Markdown、級聯刪除
+
+**學習：** 文件解析挑戰、格式注意事項
+
+---
+
+## 模組 6：混合搜索和重排序
+
+**構建：** 關鍵詞 + 向量搜索、RRF 組合、重排序
+
+**學習：** 為什麼僅靠向量搜索不夠、混合策略、重排序
+
+---
+
+## 模組 7：附加工具
+
+**構建：** 文本轉 SQL 工具（查詢結構化數據）、網頁搜索回退（當文件沒有答案時）
+
+**學習：** 多工具代理、結構化/非結構化數據之間的路由、優雅回退、用於信任的歸因
+
+---
+
+## 模組 8：子代理
+
+**構建：** 檢測全文件場景、生成具有自己工具的隔離子代理、UI 中的嵌套工具調用顯示、展示主代理和子代理的推理過程
+
+**學習：** 上下文管理、代理委派、分層代理顯示、何時進行隔離
+
+---
+
+## 成功標準
+
+完成後，學生應該具備：
+- ✅ 一個在 AI 輔助下構建的可運行 RAG 應用
+- ✅ 深入理解 RAG 概念（分塊、嵌入、檢索、重排序）
+- ✅ 理解代碼庫結構——什麼在哪裡，各部分如何連接
+- ✅ 能夠指導 AI 編程工具構建新功能
+- ✅ 能夠指導 AI 編程工具調試和修復問題
+- ✅ 具備代理模式經驗（多工具、子代理）
+- ✅ 從第一天起就建立可觀測性

@@ -1,12 +1,12 @@
-# Progress
+# 進度
 
-Track your progress through the masterclass. Update this file as you complete modules - Claude Code reads this to understand where you are in the project.
+追蹤你在大師課中的進度。完成模組後更新此文件 - Claude Code 會讀取此文件以了解你在項目中的位置。
 
-## Convention
-- `[ ]` = Not started
-- `[-]` = In progress
-- `[x]` = Completed
+## 慣例
+- `[ ]` = 未開始
+- `[-]` = 進行中
+- `[x]` = 已完成
 
-## Modules
+## 模組
 
-### Module 1: App Shell + Observability
+### 模組 1：應用外殼 + 可觀測性

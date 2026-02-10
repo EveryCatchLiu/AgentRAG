@@ -1,60 +1,58 @@
-# Cloud Code Agentic RAG Masterclass
+# Claude Code Agentic RAG 大師課
 
-Build an agentic RAG application from scratch by collaborating with Claude Code. Follow along with our video series using the docs in this repo.
+通過與 Claude Code 協作，從零開始構建一個 Agentic RAG 應用。跟隨我們的視頻系列，使用此倉庫中的文檔進行學習。
 
-[![Claude Code RAG Masterclass](./video-thumbnail.png)](https://www.youtube.com/watch?v=xgPWCuqLoek)
 
-[Watch the full video on YouTube](https://www.youtube.com/watch?v=xgPWCuqLoek)
 
-## What This Is
+## 這是什麼
 
-A hands-on course where you collaborate with Claude Code to build a full-featured RAG system. You're not the one writing code—Claude is. Your job is to guide it, understand what you're building, and course-correct when needed.
+一門實踐課程，你通過與 Claude Code 協作來構建一個功能完整的 RAG 系統。你不是寫代碼的人——Claude 才是。你的工作是引導它、理解你在構建什麼，並在需要時進行糾正。
 
-**You don't need to know how to code.** You do need to be technically minded and willing to learn about APIs, databases, and system architecture.
+**你不需要知道如何編程。** 你需要具備技術思維，並願意學習 API、數據庫和系統架構。
 
-## What You'll Build
+## 你將構建什麼
 
-- **Chat interface** with threaded conversations, streaming, tool calls, and subagent reasoning
-- **Document ingestion** with drag-and-drop upload and processing status
-- **Full RAG pipeline**: chunking, embedding, hybrid search, reranking
-- **Agentic patterns**: text-to-SQL, web search, subagents with isolated context
+- **聊天界面**，具有線程對話、流式傳輸、工具調用和子代理推理
+- **文件導入**，具有拖放上傳和處理狀態
+- **完整 RAG 管道**：分塊、嵌入、混合搜索、重排序
+- **代理模式**：文本轉 SQL、網頁搜索、具有隔離上下文的子代理
 
-## Tech Stack
+## 技術棧
 
-| Layer | Tech |
-|-------|------|
-| Frontend | React, TypeScript, Tailwind, shadcn/ui, Vite |
-| Backend | Python, FastAPI |
-| Database | Supabase (Postgres + pgvector + Auth + Storage) |
-| Doc Processing | Docling |
-| AI Models | Local (LM Studio) or Cloud (OpenAI, OpenRouter) |
-| Observability | LangSmith |
+| 層次 | 技術 |
+|------|------|
+| 前端 | React、TypeScript、Tailwind、shadcn/ui、Vite |
+| 後端 | Python、FastAPI |
+| 數據庫 | Supabase（Postgres + pgvector + 認證 + 存儲） |
+| 文件處理 | Docling |
+| AI 模型 | 本地（LM Studio）或雲端（OpenAI、OpenRouter） |
+| 可觀測性 | LangSmith |
 
-## The 8 Modules
+## 8 個模組
 
-1. **App Shell** — Auth, chat UI, managed RAG with OpenAI Responses API
-2. **BYO Retrieval + Memory** — Ingestion, pgvector, switch to generic completions API
-3. **Record Manager** — Content hashing, deduplication
-4. **Metadata Extraction** — LLM-extracted metadata, filtered retrieval
-5. **Multi-Format Support** — PDF, DOCX, HTML, Markdown via Docling
-6. **Hybrid Search & Reranking** — Keyword + vector search, RRF, reranking
-7. **Additional Tools** — Text-to-SQL, web search fallback
-8. **Subagents** — Isolated context, document analysis delegation
+1. **應用外殼** — 認證、聊天 UI、使用 OpenAI Responses API 的託管 RAG
+2. **自建檢索 + 記憶** — 導入、pgvector、切換到通用 Completions API
+3. **記錄管理器** — 內容哈希、去重
+4. **元數據提取** — LLM 提取的元數據、過濾檢索
+5. **多格式支持** — 通過 Docling 支持 PDF、DOCX、HTML、Markdown
+6. **混合搜索和重排序** — 關鍵詞 + 向量搜索、RRF、重排序
+7. **附加工具** — 文本轉 SQL、網頁搜索回退
+8. **子代理** — 隔離上下文、文件分析委派
 
-## Getting Started
+## 開始使用
 
-1. Clone this repo
-2. Install [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-3. Open in your IDE (Cursor, VS Code, etc.)
-4. Run `claude` in the terminal
-5. Use the `/onboard` command to get started
+1. 克隆此倉庫
+2. 安裝 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
+3. 在你的 IDE 中打開（Cursor、VS Code 等）
+4. 在終端中運行 `claude`
+5. 使用 `/onboard` 命令開始
 
-## Docs
+## 文檔
 
-- [PRD.md](./PRD.md) — What to build (the 8 modules in detail)
-- [CLAUDE.md](./CLAUDE.md) — Context for Claude Code
-- [PROGRESS.md](./PROGRESS.md) — Track your build progress
+- [PRD.md](./PRD.md) — 要構建什麼（8 個模組的詳細說明）
+- [CLAUDE.md](./CLAUDE.md) — Claude Code 的上下文
+- [PROGRESS.md](./PROGRESS.md) — 追蹤你的構建進度
 
-## Join the Community
+## 加入社區
 
-If you want to connect with hundreds of builders creating production-grade AI and RAG systems, join us in [The AI Automators community](https://www.theaiautomators.com/). Share your progress, get help when you're stuck, and see what others are building.
+如果你想與數百位構建生產級 AI 和 RAG 系統的開發者交流，加入我們的 [The AI Automators 社區]https://www.skool.com/aiagent/about。分享你的進度，在遇到困難時獲得幫助，看看其他人在構建什麼。

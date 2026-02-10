@@ -1,22 +1,22 @@
 ---
-description: Build from the plan
-argument-hint: [link-to-plan]
+description: 從計劃開始構建
+argument-hint: [計劃鏈接]
 ---
 
-# Build
+# 構建
 
-Read and execute: `$ARGUMENTS`
+閱讀並執行：`$ARGUMENTS`
 
-## Process
+## 流程
 
-1. **Read the entire plan** - Understand all tasks, dependencies, and success criteria
+1. **閱讀整個計劃** - 理解所有任務、依賴關係和成功標準
 
-2. **Execute tasks in order** - Implement each task following project conventions. Verify syntax and imports after each change.
+2. **按順序執行任務** - 按照項目慣例實現每個任務。每次更改後驗證語法和導入。
 
-3. **Run any validation steps** - If the plan includes tests or validation commands, run them. Fix issues before proceeding.
+3. **運行任何驗證步驟** - 如果計劃包含測試或驗證命令，運行它們。在繼續之前修復問題。
 
-4. **Report completion** - Summarise what was done:
-   - Tasks completed
-   - Files created/modified  
-   - Test results (if applicable)
-   - Any deviations from plan and why
+4. **報告完成** - 總結完成的內容：
+   - 已完成的任務
+   - 創建/修改的文件
+   - 測試結果（如適用）
+   - 與計劃的任何偏差及原因
