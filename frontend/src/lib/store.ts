@@ -1,0 +1,126 @@
+import { create } from "zustand"
+import { supabase } from "../lib/supabase"
+
+export interface Thread {
+  id: string
+  user_id: string
+  title: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Source {
+  content: string
+  similarity: number
+  filename: string
+  chunk_index: number
+  file_id: string
+}
+
+export interface ToolCall {
+  id: string
+  name: string
+  arguments: string
+  result?: string
+  status: "running" | "done" | "error"
+  children?: ToolCall[]
+  reasoning?: string[]
+  fileIds?: string[]
+  task?: string
+}
+
+export interface Message {
+  role: "user" | "assistant"
+  content: string
+  sources?: Source[]
+  toolCalls?: ToolCall[]
+  reasoning?: string[]
+}
+
+interface ChatStore {
+  threads: Thread[]
+  currentThread: Thread | null
+  messages: Message[]
+  streaming: boolean
+  filterFileIds: string[]
+  filterTopics: string[]
+
+  loadThreads: (userId: string) => Promise<void>
+  loadMessages: (threadId: string, userId: string) => Promise<void>
+  createThread: (userId: string, title?: string) => Promise<Thread>
+  selectThread: (thread: Thread) => void
+  deleteThread: (userId: string, threadId: string) => Promise<void>
+  addMessage: (message: Message) => void
+  setMessages: (messages: Message[]) => void
+  setStreaming: (streaming: boolean) => void
+  setFilterFileIds: (ids: string[]) => void
+  setFilterTopics: (topics: string[]) => void
+  clearFilters: () => void
+}
+
+export const useChatStore = create<ChatStore>((set, get) => ({
+  threads: [],
+  currentThread: null,
+  messages: [],
+  streaming: false,
+
+  loadThreads: async (userId: string) => {
+    const res = await fetch(`/api/threads?user_id=${userId}`)
+    const threads: Thread[] = await res.json()
+    set({ threads })
+  },
+
+  loadMessages: async (threadId: string, userId: string) => {
+    const res = await fetch(`/api/threads/${threadId}/messages?user_id=${userId}`)
+    const messages: Message[] = await res.json()
+    set({ messages })
+  },
+
+  createThread: async (userId: string, title?: string) => {
+    const res = await fetch(`/api/threads?user_id=${userId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title || "New Thread" }),
+    })
+    const thread: Thread = await res.json()
+    set((state) => ({
+      threads: [thread, ...state.threads],
+      currentThread: thread,
+      messages: [],
+    }))
+    return thread
+  },
+
+  selectThread: (thread: Thread) => {
+    set({ currentThread: thread, messages: [] })
+  },
+
+  deleteThread: async (userId: string, threadId: string) => {
+    await fetch(`/api/threads/${threadId}?user_id=${userId}`, { method: "DELETE" })
+    set((state) => ({
+      threads: state.threads.filter((t) => t.id !== threadId),
+      currentThread: state.currentThread?.id === threadId ? null : state.currentThread,
+      messages: state.currentThread?.id === threadId ? [] : state.messages,
+    }))
+  },
+
+  addMessage: (message: Message) => {
+    set((state) => ({
+      messages: [...state.messages, message],
+    }))
+  },
+
+  setMessages: (messages: Message[]) => {
+    set({ messages })
+  },
+
+  setStreaming: (streaming: boolean) => {
+    set({ streaming })
+  },
+
+  filterFileIds: [],
+  filterTopics: [],
+  setFilterFileIds: (ids) => set({ filterFileIds: ids }),
+  setFilterTopics: (topics) => set({ filterTopics: topics }),
+  clearFilters: () => set({ filterFileIds: [], filterTopics: [] }),
+}))

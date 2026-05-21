@@ -1,0 +1,20 @@
+[project]
+name = "agentrag-backend"
+version = "0.1.0"
+description = "AgentRAG - RAG application with chat and file import"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "openai>=1.60.0",
+    "python-dotenv>=1.0",
+    "supabase>=2.10.0",
+    "langsmith>=0.3.0",
+    "python-multipart>=0.0.20",
+    "pymupdf>=1.25.0",
+    "beautifulsoup4>=4.12.0",
+    "python-docx>=1.0.0",
+    "ddgs>=8.0.0",
+]
