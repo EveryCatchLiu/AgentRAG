@@ -146,12 +146,22 @@ def _parse_csv(text: str, delimiter: str = ",") -> str:
         return text
 
 
-def extract_text(content: bytes, filename: str) -> str:
-    """Extract text from various file formats."""
+def extract_text(content: bytes, filename: str, user_settings: dict = None) -> str:
+    """Extract text from various file formats. Supports Mistral OCR for images and image-based PDFs."""
     ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
 
+    # Image formats — always use Mistral OCR
+    if ext in ("png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"):
+        try:
+            from src.openai_client import ocr_with_mistral
+            api_key = (user_settings or {}).get("mistral_api_key", "")
+            return ocr_with_mistral(content, filename, api_key=api_key)
+        except Exception as e:
+            print(f"Mistral OCR failed for image {filename}: {e}")
+            return ""
+
     if ext == "pdf":
-        # Try pymupdf first (much better CJK support), fall back to pdfplumber
+        # Try pymupdf first (best for text-based PDFs with CJK support)
         text = ""
         try:
             import fitz
@@ -159,6 +169,17 @@ def extract_text(content: bytes, filename: str) -> str:
                 text = "\n\n".join(page.get_text() for page in doc)
         except Exception:
             pass
+
+        # If pymupdf extracted very little text, likely an image-based PDF — use OCR
+        if len(text.strip()) < 100:
+            try:
+                from src.openai_client import ocr_with_mistral
+                api_key = (user_settings or {}).get("mistral_api_key", "")
+                ocr_text = ocr_with_mistral(content, filename, api_key=api_key)
+                if ocr_text.strip():
+                    return ocr_text
+            except Exception as e:
+                print(f"Mistral OCR failed for PDF {filename}: {e}")
 
         if not text.strip():
             try:
@@ -273,7 +294,7 @@ def process_file(file_id: str, storage_path: str, user_settings: dict = None):
     try:
         file_content = storage_bucket.download(storage_path)
         if isinstance(file_content, bytes):
-            text = extract_text(file_content, filename)
+            text = extract_text(file_content, filename, user_settings=user_settings)
         else:
             text = str(file_content)
 

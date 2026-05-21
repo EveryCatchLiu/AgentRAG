@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     embedding_api_key: str = ""
     embedding_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     embedding_model: str = "text-embedding-v3"
+    mistral_api_key: str = ""
     langchain_tracing_v2: str = "true"
     langchain_api_key: str = ""
     langchain_project: str = "agentrag-module1"
