@@ -1,153 +1,168 @@
-# AgentRAG Frontend Redesign — Tech-Stylish (科技感)
+# AgentRAG Frontend Redesign — Warm Refined
 
 **Date**: 2026-05-21
 **Status**: Approved
-**Direction**: Deep Solid + Rounded Soft + Glassmorphism Palette
+**Direction**: Anthropic-inspired warm cream + orange accent + clean minimalism
 
 ## Design Goals
 
-Transform the shadcn/ui default neutral-gray theme into a distinctive, tech-forward visual identity that conveys precision, intelligence, and modernity.
+Transform the shadcn/ui default neutral-gray theme into a warm, refined visual identity inspired by Anthropic's website — light cream backgrounds, warm orange accents, clean typography, paper-like card textures.
 
 ## Color System
 
-### Dark Theme (Default)
+### Light Theme (Default)
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `--background` | `linear-gradient(135deg, #0a0a1a, #0f1025, #0d1225, #0a0f20)` | Full page background |
-| `--foreground` | `#e0e0f0` | Primary text |
-| `--card` | `#141b2e` | Card, message bubble, panel backgrounds |
-| `--card-foreground` | `#c9d1d9` | Card text |
-| `--primary` | `linear-gradient(135deg, #6366f1, #8b5cf6)` | Primary buttons, avatar, accent elements |
+| `--background` | `#faf8f5` | Full page background |
+| `--foreground` | `#3d3530` | Primary text |
+| `--card` | `#ffffff` | Card, answer bubble backgrounds |
+| `--card-secondary` | `#fefcf9` | Tool call, reasoning, source card backgrounds |
+| `--card-foreground` | `#5c4a3a` | Card text |
+| `--primary` | `linear-gradient(135deg, #e8954c, #d4704a)` | Primary buttons, message bubbles, accent elements |
 | `--primary-foreground` | `#ffffff` | Text on primary |
-| `--secondary` | `#1e2746` | Secondary backgrounds, borders |
-| `--muted` | `#141b2e` | Muted backgrounds |
-| `--muted-foreground` | `#8b9ab8` | Secondary text, labels |
-| `--accent` | `rgba(99,102,241,0.15)` | Active states, highlights |
-| `--accent-foreground` | `#c7d2fe` / `#a5b4fc` | Active text |
-| `--border` | `rgba(255,255,255,0.06)` | Card borders, separators |
-| `--ring` | `rgba(99,102,241,0.4)` | Focus rings |
-| `--destructive` | `#ef4444` | Error states |
+| `--secondary` | `#f5f1ec` | Sidebar, secondary panels |
+| `--secondary-foreground` | `#3d3530` | Text on secondary |
+| `--muted` | `#f5f1ec` | Muted backgrounds |
+| `--muted-foreground` | `#9e8b78` | Secondary text, labels |
+| `--accent` | `#fefaf5` | Active states, highlighted items |
+| `--accent-foreground` | `#8b5e3c` | Active text |
+| `--border` | `#e8e0d5` | Standard borders |
+| `--border-light` | `#f0e0c8` | Subtle card borders |
+| `--border-dashed` | `#e8d5b8` | Dashed borders (reasoning panels) |
+| `--ring` | `rgba(232, 149, 76, 0.4)` | Focus rings |
+| `--destructive` | `#dc5a5a` | Error states |
+| `--destructive-foreground` | `#ffffff` | Text on destructive |
 
-### Accent Gradients
+### Accent Palette
 
-- **Primary gradient**: `#6366f1` → `#8b5cf6` (indigo to purple)
-- **Avatar glow**: `box-shadow: 0 0 12px rgba(99,102,241,0.35)` 
-- **Top-edge light bars**: `linear-gradient(90deg, transparent, rgba(99,102,241,0.2), transparent)` on card tops
-- **Button shadow**: `box-shadow: 0 2px 12px rgba(99,102,241,0.3)`
+- **Primary orange**: `#e8954c` → `#d4704a` (warm orange gradient)
+- **Hover orange**: `#d4784a`
+- **Light orange bg**: `#fefaf5`
+- **Orange border**: `#f0d8b8`
+
+### Text Hierarchy
+
+- **Primary text**: `#3d3530` (dark brown-black)
+- **Body text**: `#5c4a3a` (medium brown)
+- **Secondary text**: `#9e8b78` (warm gray-brown)
+- **Muted text**: `#b8a48e` (light warm gray)
+- **Disabled text**: `#c4b49a` (very light warm)
 
 ### Status Colors
 
-- **Success**: `#22c55e` (green)
-- **Warning**: `#f59e0b` (amber)
-- **Error**: `#ef4444` (red)
-- **Info**: `#6366f1` (indigo)
+- **Success**: `#6b9c5a` (sage green)
+- **Warning**: `#d4904e` (warm amber)
+- **Error**: `#dc5a5a` (soft red)
+- **Info**: `#8b5e3c` (warm brown)
 
 ## Border Radius Scale
 
 | Element | Radius |
 |---------|--------|
-| Pill buttons, inputs | `20px` (full round) |
-| Message bubbles | `16px 16px 4px 16px` (user, right-bottom sharp) / `16px 16px 16px 6px` (assistant, left-bottom slight) |
-| Cards (tool calls, sources, reasoning) | `12px` |
-| Sidebar items | `12px` |
-| Modals/dialogs | `16px` |
+| Pill buttons, inputs, filter tags | `16px` |
+| Message bubbles (user) | `14px 14px 4px 14px` |
+| Message bubbles (assistant) | `14px 14px 14px 6px` |
+| Cards (tool calls, sources, reasoning) | `10px` |
+| Sidebar items | `8px` |
+| Sidebar logo | `6px` |
+| Modals/dialogs | `12px` |
 
-## Glow and Light Effects
+## Shadows
 
-1. **Avatar/logo glow**: Rounded gradient icon with `box-shadow: 0 0 12px` in primary color
-2. **Top-edge gradient**: 1px `linear-gradient` bar at the top of message bubbles and cards, fading from transparent through accent to transparent
-3. **Button glow**: Primary buttons get `box-shadow: 0 2px 12px rgba(99,102,241,0.3)`
-4. **Status dots**: Small colored circles with matching `box-shadow` glow
-5. **Active sidebar item**: Left border highlight + subtle gradient background
+1. **Card/input shadow**: `box-shadow: 0 1px 3px rgba(0,0,0,0.03)` — barely visible, just enough to lift from background
+2. **Button shadow**: `box-shadow: 0 1px 6px rgba(200,130,70,0.2)` — warm tinted shadow
+3. **User bubble shadow**: `box-shadow: 0 1px 6px rgba(200,130,70,0.15)`
+4. **No heavy shadows** — the design relies on borders and subtle elevation, not dramatic depth
 
 ## Typography
 
-- **Font stack**: System font (`system-ui, -apple-system, sans-serif`)
-- **Antialiasing**: `-webkit-font-smoothing: antialiased`
-- **Scale**: 9px (captions), 10px (body), 11px (small headers), 13px (section headers)
-- **Weights**: 400 (body), 500 (medium emphasis), 600-700 (headers)
-- **Letter spacing**: `-0.3px` on logo and headers for tighter look
+- **Font stack**: System font (`system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`)
+- **Antialiasing**: `-webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale`
+- **Scale**: 9px (captions/badges), 10px (body), 11px (small headers), 13px (section headers), 16px (page titles)
+- **Weights**: 400 (body), 500 (medium), 600 (semibold), 650-700 (bold/headers)
+- **Letter spacing**: Default for body, `-0.3px` for logo
 
 ## Component Specifications
 
 ### Sidebar
-- Dark solid background: `rgba(10,10,25,0.95)`
-- Right border: `1px solid rgba(99,102,241,0.12)`
-- Logo: gradient circle + AgentRAG text, weight 700
-- Thread items: 12px border radius, active state with gradient background + subtle border
-- Bottom nav: glowing dot indicators + muted text
+- Background: `#f5f1ec` (warm beige)
+- Right border: `1px solid #e8e0d5`
+- Logo: 18px rounded square with orange gradient + bold "AgentRAG" text (#3d3530, weight 650)
+- Active thread: `#fefaf5` background, `#f0d8b8` border, `#8b5e3c` text
+- Inactive thread: `#9e8b78` text, no background
+- Bottom nav: warm dot indicators + `#b8a48e` text
 
 ### Message Bubbles
-- **User**: Gradient `#6366f1 → #7c3aed` background, white text, right-aligned, 16px 16px 4px 16px radius, soft shadow
-- **Assistant**: `#141b2e` background with top-edge gradient bar, `#c9d1d9` text, 16px 16px 16px 6px radius
-- **Loading**: Animated shimmer or spinner in muted colors
+- **User**: Orange gradient `#e8954c → #d4704a`, white text, right-aligned, `14px 14px 4px 14px` radius, warm shadow
+- **Assistant**: White `#fff` background, `#f0e0c8` border, `#5c4a3a` text, `14px 14px 14px 6px` radius, minimal shadow
+- **Loading**: Subtle animated dots in warm orange
 
 ### Tool Call Cards
-- Background: `#141b2e`, border: `1px solid rgba(255,255,255,0.06)`, radius: 12px
-- Header row: icon + name + status dot + expand chevron
-- Status: green check for done, amber spinner for running, red X for error
-- Expanded content: result text (max-h with scroll), nested children indented
-- Web search: search icon + purple glow dot
-- Database query: database icon + blue glow dot
-- Sub-agent: bot icon + indigo glow dot
+- Background: `#fefcf9`, border: `1px solid #f0e0c8`, radius: 10px
+- Header: icon + tool name + status indicator + expand chevron
+- Status dots: green (`#6b9c5a`) for done, warm amber (`#d4905e`) for running, soft red (`#dc5a5a`) for error
+- Icons: lucide-react icons in `#8b7355`
+- Expanded content: result text with max-h scroll, nested children left-indented
 
 ### Reasoning Panel
-- Dashed border: `rgba(99,102,241,0.2)`, background: `#0f1625`
-- Header: brain emoji + "Thinking (N steps)" + expand arrow
+- Dashed border: `1px dashed #e8d5b8`, background: `#fefcf9`
+- Header: brain emoji + "Thinking (N steps)" + expand arrow, text in `#b8a48e`
 - Steps: separated by dashed borders, truncated at 500 chars
 
 ### Input Area
-- Rounded pill input: 20px radius, `#141b2e` background, subtle border
-- Send button: primary gradient, pill shape, glow shadow
-- Disabled state: reduced opacity
+- Input: 16px pill radius, white `#fff` background, `#e8e0d5` border, `#b8a48e` placeholder
+- Send button: orange gradient, 16px pill, white text, warm shadow
+- Disabled: reduced opacity (50%), no shadow
 
 ### Filter Bar
-- Pill-shaped select tags: 20px radius, muted background
-- Multi-select with subtle active state
-- Clear button: text style, muted color
+- Tags: 16px pill, `#f5f1ec` background, `#e8e0d5` border, `#8b7355` text
+- Active tag: slightly darker border, `#fefaf5` background
+- Clear button: text style, `#9e8b78` color
 
 ### Source Cards
-- Background: `#0f1625`, subtle border
-- File icon + filename + similarity score
-- Expandable to show content preview
+- Background: `#fefcf9`, border: `1px solid #f0e0c8`, radius: 8px
+- File icon + filename + relevance score in warm orange
+- Expandable content preview
 
 ### Scrollbar
-- Thin, semi-transparent, matching accent color
-- `::-webkit-scrollbar` styled with `#6366f133` thumb
+- Thin (6px), warm-toned
+- Thumb: `#d0c0a8`, track: transparent
+- Hover thumb: `#b8a080`
+
+### Login Page
+- Centered card on warm cream background
+- Card: white, subtle border, 12px radius, minimal shadow
+- Inputs: pill shape, white bg, warm border
+- Submit button: full-width orange gradient pill
+- Link text: `#8b5e3c` with hover underline
 
 ## Layout
 
-### Page Structure
 - Full height `h-screen` flex layout
-- Sidebar: fixed 240px (was 256px/16rem), collapsible (future)
-- Main chat: flex-1, centered max-width for messages
-- No header bar — sidebar logo serves as app header
-
-### Responsive
-- Mobile: sidebar hidden behind hamburger (future enhancement)
-- Current: desktop-first, minimum usable at 768px
-
-## Implementation Notes
-
-1. Migrate from Tailwind v4 CSS-based theme (`@theme`) to CSS custom properties for gradient support
-2. Replace `bg-muted`, `bg-accent` etc. with new color tokens throughout
-3. Extract inline tool call rendering in Chat.tsx to ToolCallCard (already done in Module 8)
-4. Replace all border-radius values with the new scale
-5. Add the top-edge gradient bar to message bubbles and cards via a CSS utility or inline style
-6. Keep existing component structure — only restyle
-7. No new dependencies needed — all effects are pure CSS
+- Sidebar: 240px fixed width
+- Main chat: flex-1, messages centered with max-width
+- No top header — sidebar logo serves as app identity
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `frontend/src/index.css` | Complete rewrite of theme tokens, add glow/gradient utilities |
-| `frontend/src/pages/Chat.tsx` | Updated class names, gradient message bubbles, glow effects |
-| `frontend/src/pages/Login.tsx` | Updated theme, gradient button |
-| `frontend/src/pages/Import.tsx` | Updated theme, card styles |
-| `frontend/src/pages/Settings.tsx` | Updated theme, form styles |
-| `frontend/src/components/ToolCallCard.tsx` | Glow dots, updated border radius, status indicators |
-| `frontend/src/components/ReasoningPanel.tsx` | Updated colors, dashed borders |
-| `frontend/src/components/SourceCard.tsx` | Updated card styles |
-| `frontend/src/components/FilterBar.tsx` | Pill shapes, updated tag styles |
+| `frontend/src/index.css` | Complete theme rewrite: warm colors, border radius, shadows |
+| `frontend/src/pages/Chat.tsx` | Updated bubble styles, warm class names |
+| `frontend/src/pages/Login.tsx` | Warm theme, orange gradient button |
+| `frontend/src/pages/Import.tsx` | Warm card styles |
+| `frontend/src/pages/Settings.tsx` | Warm form styles |
+| `frontend/src/components/ToolCallCard.tsx` | Warm borders, warm status dots |
+| `frontend/src/components/ReasoningPanel.tsx` | Warm dashed borders, beige bg |
+| `frontend/src/components/SourceCard.tsx` | Warm card, orange score |
+| `frontend/src/components/FilterBar.tsx` | Warm pill tags |
+
+## Implementation Notes
+
+1. Rewrite `index.css` `@theme` block with all new warm color tokens
+2. Remove dark mode `.dark` class (single warm theme)
+3. Update `tailwind.config` or `@theme` with new border-radius scale
+4. All gradients are CSS `linear-gradient`, no new dependencies
+5. Component structure unchanged — only class names and inline styles change
+6. Test all pages: Login, Chat (with messages/tool calls/sources), Import, Settings
