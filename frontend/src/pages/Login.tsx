@@ -36,8 +36,8 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center bg-[#faf8f5]">
       <div className="w-full max-w-md space-y-6 rounded-2xl border border-[#e8e0d5] bg-white p-8 shadow-sm">
         <div className="flex justify-center">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a]"></div>
-        </div>
+            <img src="/favicon.svg" alt="AgentRAG" className="h-12 w-12" />
+          </div>
         <h1 className="text-2xl font-semibold text-center text-[#3d3530]">AgentRAG</h1>
         <h2 className="text-lg font-medium text-center text-[#9e8b78]">
           {isSignUp ? "Create an account" : "Sign in"}

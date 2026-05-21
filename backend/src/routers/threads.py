@@ -1,5 +1,6 @@
 import json
 import re
+import threading
 import uuid
 from typing import AsyncGenerator
 
@@ -95,6 +96,32 @@ def _execute_delegation(args: dict, call_id: str, llm_client, model: str) -> dic
         "fileIds": file_ids,
         "task": task[:200],
     }
+
+
+def _generate_thread_title(user_message: str, assistant_reply: str, thread_id: str, llm_client, model: str):
+    """Generate a concise thread title from the first exchange and update the DB."""
+    prompt = f"""Generate a very short thread title (3-8 words) based on this conversation. Return ONLY the title, no explanation, no quotes.
+
+User: {user_message[:500]}
+Assistant: {assistant_reply[:500]}
+
+Title:"""
+
+    try:
+        resp = llm_client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=30,
+        )
+        title = resp.choices[0].message.content.strip()
+        # Clean up: remove quotes, limit length
+        title = title.strip('"').strip("'").strip()
+        if len(title) > 80:
+            title = title[:77] + "..."
+        if title:
+            supabase.table("threads").update({"title": title}).eq("id", thread_id).execute()
+    except Exception:
+        pass  # Title generation is best-effort, don't block on failure
 
 
 SYSTEM_PROMPT = """你是一个智能助手。请遵循以下规则：
@@ -203,6 +230,23 @@ async def get_messages(thread_id: str, user_id: str):
         .execute()
     )
     return result.data
+
+
+def _maybe_generate_title(thread_id: str, user_msg: str, assistant_reply: str, llm_client, model: str):
+    """Generate a thread title from the first exchange, in a background thread."""
+    # Only generate if thread has default title
+    try:
+        thread = supabase.table("threads").select("title").eq("id", thread_id).execute()
+        current_title = (thread.data[0].get("title") or "") if thread.data else ""
+        if current_title != "New Thread":
+            return
+    except Exception:
+        return
+
+    def _run():
+        _generate_thread_title(user_msg, assistant_reply, thread_id, llm_client, model)
+
+    threading.Thread(target=_run, daemon=True).start()
 
 
 @router.post("/{thread_id}/messages")
@@ -456,6 +500,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                     "role": "assistant",
                     "content": full_content,
                 }).execute()
+                _maybe_generate_title(thread_id, request.content, full_content, llm_client, model)
                 yield "event: done\ndata: end\n\n"
                 return
 
@@ -482,6 +527,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                         "role": "assistant",
                         "content": full_content,
                     }).execute()
+                    _maybe_generate_title(thread_id, request.content, full_content, llm_client, model)
 
                 yield "event: done\ndata: end\n\n"
             except Exception as stream_err:

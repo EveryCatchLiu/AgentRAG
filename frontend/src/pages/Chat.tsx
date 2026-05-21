@@ -171,7 +171,7 @@ export default function Chat() {
       <aside className="flex w-64 flex-col border-r border-[#e8e0d5] bg-[#f5f1ec]">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-[#e8954c] to-[#d4704a]"></div>
+            <img src="/favicon.svg" alt="AgentRAG" className="h-6 w-6" />
             <h1 className="font-semibold text-[#3d3530]">AgentRAG</h1>
           </div>
           <div className="flex gap-1">
