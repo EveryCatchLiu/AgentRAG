@@ -100,10 +100,10 @@ def _execute_delegation(args: dict, call_id: str, llm_client, model: str) -> dic
 
 def _generate_thread_title(user_message: str, assistant_reply: str, thread_id: str, llm_client, model: str):
     """Generate a concise thread title from the first exchange and update the DB."""
-    prompt = f"""Generate a very short thread title (3-8 words) based on this conversation. Return ONLY the title, no explanation, no quotes.
+    prompt = f"""Short title (3-8 words) for this conversation. Return ONLY the title:
 
-User: {user_message[:500]}
-Assistant: {assistant_reply[:500]}
+User: {user_message[:300]}
+Assistant: {assistant_reply[:300]}
 
 Title:"""
 
@@ -111,10 +111,23 @@ Title:"""
         resp = llm_client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=30,
+            max_tokens=500,
+            temperature=0.3,
         )
-        title = resp.choices[0].message.content.strip()
-        # Clean up: remove quotes, limit length
+        msg = resp.choices[0].message
+        title = (msg.content or "").strip()
+
+        # If thinking model consumed tokens in reasoning, try to extract from reasoning
+        if not title:
+            reasoning = getattr(msg, "reasoning_content", None) or ""
+            # Look for a clear title-like line at the end of reasoning
+            lines = reasoning.strip().split("\n")
+            for line in reversed(lines):
+                line = line.strip().strip('"').strip("'")
+                if line and len(line) >= 3 and len(line) <= 80:
+                    title = line
+                    break
+
         title = title.strip('"').strip("'").strip()
         if len(title) > 80:
             title = title[:77] + "..."
