@@ -26,69 +26,74 @@ export default function FilterBar({ userId }: { userId: string }) {
   if (!filterData || (filterData.files.length === 0 && filterData.topics.length === 0)) return null
 
   return (
-    <div className="border-b border-[#e8e0d5] bg-[#faf8f5] px-4 py-2.5">
-      <div className="flex items-center gap-3">
+    <div className="border-b border-[#e8e0d5] px-4 py-3">
+      <div className="flex items-end gap-3">
         {/* File filter */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <FileText className="h-4 w-4 text-[#b8a48e] shrink-0" />
-          <div className="relative flex-1 min-w-0">
-            <select
-              multiple
-              value={filterFileIds}
-              onChange={(e) =>
-                setFilterFileIds(Array.from(e.target.selectedOptions, (o) => o.value))
-              }
-              className="w-full rounded-xl border border-[#e8e0d5] bg-white px-3 py-2 text-sm text-[#5c4a3a] cursor-pointer truncate focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
-              size={Math.min(Math.max(filterData.files.length, 2), 5)}
-            >
-              {filterData.files.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.filename}
-                </option>
-              ))}
-            </select>
-            <span className="absolute left-3 top-1.5 text-[10px] text-[#b8a48e] pointer-events-none">
-              Files {filterFileIds.length > 0 ? `(${filterFileIds.length})` : ""}
-            </span>
-          </div>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-[#b8a48e]">
+            <FileText className="h-3.5 w-3.5" />
+            Files
+            {filterFileIds.length > 0 && (
+              <span className="text-[#e8954c]">· {filterFileIds.length} selected</span>
+            )}
+          </label>
+          <select
+            multiple
+            value={filterFileIds}
+            onChange={(e) =>
+              setFilterFileIds(Array.from(e.target.selectedOptions, (o) => o.value))
+            }
+            className="w-full rounded-xl border border-[#e8e0d5] bg-white px-3 py-2 text-sm text-[#5c4a3a] focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
+            size={Math.min(Math.max(filterData.files.length, 3), 6)}
+          >
+            {filterData.files.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.filename}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Topic filter */}
-        {filterData.topics.length > 0 ? (
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Tag className="h-4 w-4 text-[#b8a48e] shrink-0" />
-            <div className="relative flex-1 min-w-0">
-              <select
-                multiple
-                value={filterTopics}
-                onChange={(e) =>
-                  setFilterTopics(Array.from(e.target.selectedOptions, (o) => o.value))
-                }
-                className="w-full rounded-xl border border-[#e8e0d5] bg-white px-3 py-2 text-sm text-[#5c4a3a] cursor-pointer truncate focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
-                size={Math.min(Math.max(filterData.topics.length, 2), 5)}
-              >
-                {filterData.topics.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <span className="absolute left-3 top-1.5 text-[10px] text-[#b8a48e] pointer-events-none">
-                Topics {filterTopics.length > 0 ? `(${filterTopics.length})` : ""}
-              </span>
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-medium text-[#b8a48e]">
+            <Tag className="h-3.5 w-3.5" />
+            Topics
+            {filterTopics.length > 0 && (
+              <span className="text-[#e8954c]">· {filterTopics.length} selected</span>
+            )}
+          </label>
+          {filterData.topics.length > 0 ? (
+            <select
+              multiple
+              value={filterTopics}
+              onChange={(e) =>
+                setFilterTopics(Array.from(e.target.selectedOptions, (o) => o.value))
+              }
+              className="w-full rounded-xl border border-[#e8e0d5] bg-white px-3 py-2 text-sm text-[#5c4a3a] focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
+              size={Math.min(Math.max(filterData.topics.length, 3), 6)}
+            >
+              {filterData.topics.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="w-full rounded-xl border border-[#e8e0d5] bg-[#faf8f5] px-3 py-2 text-sm text-[#c4b49a]">
+              No topics available
             </div>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 flex-1 min-w-0" />
-        )}
+          )}
+        </div>
 
+        {/* Clear button */}
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded-xl px-3 py-2 text-sm text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c] transition-colors shrink-0"
+            className="flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-medium text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c] transition-colors shrink-0 self-center"
           >
             <X className="h-4 w-4" />
-            Clear
+            Clear all
           </button>
         )}
       </div>
