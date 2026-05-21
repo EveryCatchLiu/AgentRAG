@@ -7,6 +7,7 @@ import SourceList from "../components/SourceCard"
 import ToolCallCard from "../components/ToolCallCard"
 import ReasoningPanel from "../components/ReasoningPanel"
 import MarkdownMessage from "../components/MarkdownMessage"
+import WelcomeScreen from "../components/WelcomeScreen"
 import FilterBar from "../components/FilterBar"
 
 export default function Chat() {
@@ -355,9 +356,7 @@ export default function Chat() {
             </div>
           </>
         ) : (
-          <div className="flex flex-1 items-center justify-center text-muted-foreground">
-            Select a thread or create a new one
-          </div>
+          <WelcomeScreen onCreateThread={handleNewThread} />
         )}
       </main>
     </div>
