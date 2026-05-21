@@ -85,7 +85,7 @@ export default function SettingsPage() {
       <div className="border-b px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/chat" className="rounded-md p-1.5 hover:bg-accent">
+            <Link to="/chat" className="rounded-lg p-1.5 text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c]">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="m15 18-6-6 6-6" />
               </svg>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveLLM}
               disabled={saving}
-              className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-6 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {saving ? "Saving..." : saved ? "Saved!" : "Save LLM Settings"}
             </button>
@@ -264,7 +264,7 @@ export default function SettingsPage() {
             <button
               onClick={handleSaveEmbedding}
               disabled={saving}
-              className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-6 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {saving ? "Saving..." : saved ? "Saved!" : "Save Embedding Settings"}
             </button>

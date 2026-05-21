@@ -168,23 +168,26 @@ export default function Chat() {
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
-      <aside className="flex w-64 flex-col border-r bg-muted/30">
+      <aside className="flex w-64 flex-col border-r border-[#e8e0d5] bg-[#f5f1ec]">
         <div className="flex items-center justify-between p-4">
-          <h1 className="font-semibold">AgentRAG</h1>
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 rounded-md bg-gradient-to-br from-[#e8954c] to-[#d4704a]"></div>
+            <h1 className="font-semibold text-[#3d3530]">AgentRAG</h1>
+          </div>
           <div className="flex gap-1">
-            <Link to="/import" className="rounded-md p-1.5 hover:bg-accent" title="Import files">
+            <Link to="/import" className="rounded-lg p-1.5 text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c]" title="Import files">
               <FolderInput className="h-4 w-4" />
             </Link>
             <button
               onClick={handleNewThread}
-              className="rounded-md p-1.5 hover:bg-accent"
+              className="rounded-lg p-1.5 text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c]"
               title="New thread"
             >
               <Plus className="h-4 w-4" />
             </button>
             <button
               onClick={signOut}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent"
+              className="rounded-lg p-1.5 text-[#b8a48e] hover:bg-[#fefaf5] hover:text-[#8b5e3c]"
               title="Sign out"
             >
               <svg
@@ -209,10 +212,10 @@ export default function Chat() {
           {threads.map((thread) => (
             <div
               key={thread.id}
-              className={`group mb-1 flex items-center rounded-md ${
+              className={`group mb-1 flex items-center rounded-lg ${
                 currentThread?.id === thread.id
-                  ? "bg-accent"
-                  : "hover:bg-accent/50"
+                  ? "bg-[#fefaf5] border border-[#f0d8b8] text-[#8b5e3c]"
+                  : "text-[#9e8b78] hover:bg-[#fdf9f5]"
               }`}
             >
               <button
@@ -232,17 +235,17 @@ export default function Chat() {
         </div>
 
         {/* Bottom nav */}
-        <div className="flex border-t">
+        <div className="flex border-t border-[#e8e0d5]">
           <Link
             to="/import"
-            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-accent"
+            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c]"
           >
             <FolderInput className="h-4 w-4" />
             Import
           </Link>
           <Link
             to="/settings"
-            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:bg-accent"
+            className="flex-1 flex items-center justify-center gap-2 py-3 text-sm text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c]"
           >
             <Settings className="h-4 w-4" />
             Settings
@@ -257,7 +260,7 @@ export default function Chat() {
             <FilterBar userId={user.id} />
             <div className="flex-1 overflow-y-auto p-6">
               {error && (
-                <div className="mx-auto mb-4 max-w-2xl rounded-md border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <div className="mx-auto mb-4 max-w-2xl rounded-xl border border-[#f0d0c0] bg-[#fef9f6] px-4 py-3 text-sm text-[#b85c3a]">
                   <div className="flex items-center justify-between gap-2">
                     <span>{error}</span>
                     <button
@@ -283,11 +286,16 @@ export default function Chat() {
                       }`}
                     >
                       <div
-                        className={`max-w-[80%] whitespace-pre-wrap rounded-lg px-4 py-2 text-sm ${
+                        className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                           msg.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted"
+                            ? "bg-gradient-to-br from-[#e8954c] to-[#d4704a] text-white shadow-sm"
+                            : "bg-white border border-[#f0e0c8] text-[#5c4a3a] shadow-sm"
                         }`}
+                        style={
+                          msg.role === "user"
+                            ? { borderRadius: "14px 14px 4px 14px" }
+                            : { borderRadius: "14px 14px 14px 6px" }
+                        }
                       >
                         {msg.content || (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -313,7 +321,7 @@ export default function Chat() {
               )}
             </div>
 
-            <div className="border-t p-4">
+            <div className="border-t border-[#e8e0d5] p-4">
               <div className="mx-auto flex max-w-2xl gap-2">
                 <input
                   type="text"
@@ -326,13 +334,13 @@ export default function Chat() {
                     }
                   }}
                   placeholder="Type a message..."
-                  className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="flex-1 rounded-2xl border border-[#e8e0d5] bg-white px-4 py-2.5 text-sm text-[#5c4a3a] placeholder-[#b8a48e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e8954c]/30 focus:border-[#e8954c]/40"
                   disabled={streaming}
                 />
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || streaming}
-                  className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+                  className="rounded-2xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
                   Send
                 </button>

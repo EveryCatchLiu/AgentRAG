@@ -26,23 +26,23 @@ export default function FilterBar({ userId }: { userId: string }) {
   if (!filterData || (filterData.files.length === 0 && filterData.topics.length === 0)) return null
 
   return (
-    <div className="border-b px-4 py-3">
+    <div className="border-b border-[#e8e0d5] bg-[#faf8f5] px-4 py-3">
       <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground shrink-0">
+        <span className="flex items-center gap-1.5 text-sm font-medium text-[#b8a48e] shrink-0">
           <Filter className="h-4 w-4" />
           Filter search scope
         </span>
 
         {/* File filter */}
         <div className="flex items-center gap-1.5">
-          <FileText className="h-4 w-4 text-muted-foreground" />
+          <FileText className="h-4 w-4 text-[#b8a48e]" />
           <select
             multiple
             value={filterFileIds}
             onChange={(e) =>
               setFilterFileIds(Array.from(e.target.selectedOptions, (o) => o.value))
             }
-            className="rounded border bg-background px-3 py-1.5 text-sm w-[220px] cursor-pointer overflow-x-auto whitespace-nowrap"
+            className="rounded-xl border border-[#e8e0d5] bg-white px-3 py-1.5 text-sm text-[#5c4a3a] w-[220px] cursor-pointer overflow-x-auto whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
             size={Math.min(Math.max(filterData.files.length, 2), 5)}
           >
             {filterData.files.map((f) => (
@@ -56,14 +56,14 @@ export default function FilterBar({ userId }: { userId: string }) {
         {/* Topic filter */}
         {filterData.topics.length > 0 && (
           <div className="flex items-center gap-1.5">
-            <Tag className="h-4 w-4 text-muted-foreground" />
+            <Tag className="h-4 w-4 text-[#b8a48e]" />
             <select
               multiple
               value={filterTopics}
               onChange={(e) =>
                 setFilterTopics(Array.from(e.target.selectedOptions, (o) => o.value))
               }
-              className="rounded border bg-background px-3 py-1.5 text-sm w-[220px] cursor-pointer overflow-x-auto whitespace-nowrap"
+              className="rounded-xl border border-[#e8e0d5] bg-white px-3 py-1.5 text-sm text-[#5c4a3a] w-[220px] cursor-pointer overflow-x-auto whitespace-nowrap focus:outline-none focus:ring-2 focus:ring-[#e8954c]/20"
               size={Math.min(Math.max(filterData.topics.length, 2), 5)}
             >
               {filterData.topics.map((t) => (
@@ -78,7 +78,7 @@ export default function FilterBar({ userId }: { userId: string }) {
         {hasFilters && (
           <button
             onClick={clearFilters}
-            className="flex items-center gap-1 rounded px-2 py-1 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex items-center gap-1 rounded-xl px-3 py-1 text-sm text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c] transition-colors"
           >
             <X className="h-4 w-4" />
             Clear
@@ -87,7 +87,7 @@ export default function FilterBar({ userId }: { userId: string }) {
       </div>
 
       {/* Instruction hint */}
-      <p className="mt-1.5 text-center text-xs text-muted-foreground/60">
+      <p className="mt-1.5 text-center text-xs text-[#c4b49a]">
         Hold Ctrl/Cmd to select multiple items. Leave empty to search all.
       </p>
     </div>

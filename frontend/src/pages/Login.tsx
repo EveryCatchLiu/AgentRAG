@@ -33,15 +33,18 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md space-y-6 rounded-lg border p-8 shadow-sm">
-        <h1 className="text-2xl font-semibold text-center">AgentRAG</h1>
-        <h2 className="text-lg font-medium text-center">
+    <div className="flex min-h-screen items-center justify-center bg-[#faf8f5]">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border border-[#e8e0d5] bg-white p-8 shadow-sm">
+        <div className="flex justify-center">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a]"></div>
+        </div>
+        <h1 className="text-2xl font-semibold text-center text-[#3d3530]">AgentRAG</h1>
+        <h2 className="text-lg font-medium text-center text-[#9e8b78]">
           {isSignUp ? "Create an account" : "Sign in"}
         </h2>
 
         {error && (
-          <p className="text-sm text-red-500 text-center">{error}</p>
+          <p className="text-sm text-[#dc5a5a] text-center bg-[#fef9f6] py-2 rounded-lg">{error}</p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -53,7 +56,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-[#e8e0d5] bg-white px-4 py-2.5 text-sm text-[#5c4a3a] placeholder-[#b8a48e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e8954c]/30 focus:border-[#e8954c]/40"
               placeholder="you@example.com"
             />
           </div>
@@ -66,24 +69,24 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              className="w-full rounded-xl border border-[#e8e0d5] bg-white px-4 py-2.5 text-sm text-[#5c4a3a] placeholder-[#b8a48e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e8954c]/30 focus:border-[#e8954c]/40"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {loading ? "Please wait..." : isSignUp ? "Sign Up" : "Sign In"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-[#b8a48e]">
           {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
           <button
             type="button"
             onClick={() => setIsSignUp(!isSignUp)}
-            className="text-primary hover:underline"
+            className="text-[#8b5e3c] hover:underline font-medium"
           >
             {isSignUp ? "Sign in" : "Sign up"}
           </button>

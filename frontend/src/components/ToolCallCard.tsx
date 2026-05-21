@@ -49,11 +49,11 @@ export default function ToolCallCard({ toolCall, depth = 0 }: ToolCallCardProps)
 
   return (
     <div className="space-y-1" style={{ marginLeft: depth * 16 }}>
-      <div className="rounded border bg-muted/50 text-xs">
+      <div className="rounded-[10px] border border-[#f0e0c8] bg-[#fefcf9] text-xs overflow-hidden">
         {/* Header */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center gap-2 px-3 py-2 hover:bg-muted/60 rounded-t text-left"
+          className="flex w-full items-center gap-2 px-3 py-2 hover:bg-[#fdf8f2] text-left text-[#8b7355]"
         >
           <span className="text-muted-foreground">
             <ToolIcon name={toolCall.name} />
@@ -71,7 +71,7 @@ export default function ToolCallCard({ toolCall, depth = 0 }: ToolCallCardProps)
 
         {/* Expanded content */}
         {expanded && (
-          <div className="border-t px-3 py-2 space-y-2">
+          <div className="border-t border-[#f0e0c8] px-3 py-2 space-y-2">
             {/* Result */}
             {toolCall.result && (
               <p className="whitespace-pre-wrap text-muted-foreground leading-relaxed max-h-60 overflow-y-auto">

@@ -219,14 +219,14 @@ export default function Import() {
 
         {/* Skipped notification */}
         {skippedFiles.length > 0 && (
-          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+          <div className="mb-4 rounded-xl border border-[#f0d8b8] bg-[#fefaf5] px-4 py-3 text-sm text-[#8b5e3c]">
             Skipped {skippedFiles.length} duplicate file(s): {skippedFiles.join(", ")}
           </div>
         )}
 
         {/* Updated notification */}
         {updatedFiles.length > 0 && (
-          <div className="mb-4 rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+          <div className="mb-4 rounded-xl border border-[#d0d0e0] bg-[#f8f8fc] px-4 py-3 text-sm text-[#5a5a80]">
             Updating {updatedFiles.length} file(s): {updatedFiles.join(", ")}
           </div>
         )}
