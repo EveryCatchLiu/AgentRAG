@@ -6,6 +6,7 @@ import { Plus, Trash2, Loader2, FolderInput, Settings } from "lucide-react"
 import SourceList from "../components/SourceCard"
 import ToolCallCard from "../components/ToolCallCard"
 import ReasoningPanel from "../components/ReasoningPanel"
+import MarkdownMessage from "../components/MarkdownMessage"
 import FilterBar from "../components/FilterBar"
 
 export default function Chat() {
@@ -286,10 +287,10 @@ export default function Chat() {
                       }`}
                     >
                       <div
-                        className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                           msg.role === "user"
                             ? "bg-gradient-to-br from-[#e8954c] to-[#d4704a] text-white shadow-sm"
-                            : "bg-white border border-[#f0e0c8] text-[#5c4a3a] shadow-sm"
+                            : "bg-white border border-[#f0e0c8] shadow-sm"
                         }`}
                         style={
                           msg.role === "user"
@@ -297,7 +298,13 @@ export default function Chat() {
                             : { borderRadius: "14px 14px 14px 6px" }
                         }
                       >
-                        {msg.content || (
+                        {msg.content ? (
+                          msg.role === "assistant" ? (
+                            <MarkdownMessage content={msg.content} />
+                          ) : (
+                            <span className="whitespace-pre-wrap">{msg.content}</span>
+                          )
+                        ) : (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         )}
                       </div>
