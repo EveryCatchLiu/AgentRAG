@@ -1,58 +1,217 @@
-# Claude Code Agentic RAG 
+# AgentRAG
 
-通过与 Claude Code 协作，从零开始构建一个 Agentic RAG 应用。跟随我们的视频系列，使用此仓库中的文档进行学习。
+An intelligent document assistant — upload files, ask questions, get answers grounded in your knowledge base. Built with a multi-tool agent that can search the web, query databases, and spawn sub-agents for deep document analysis.
 
-## 这是什么
+## Features
 
-一门实践课程，你通过与 Claude Code 协作来构建一个功能完整的 RAG 系统。你不是写代码的人——Claude 才是。你的工作是引导它、理解你在构建什么，并在需要时进行纠正。
+- **Chat Interface** — Threaded conversations with streaming responses, Markdown rendering, and source attribution
+- **File Import** — Upload PDF, DOCX, HTML, Markdown, CSV/TSV, and images (PNG/JPG/TIFF). Mistral OCR handles scanned PDFs and images automatically
+- **Hybrid Search** — Vector (pgvector) + keyword retrieval with RRF fusion and LLM reranking for the most relevant results
+- **Multi-Tool Agent** — The LLM autonomously chooses between web search (DuckDuckGo + weather API), database queries (NL → SQL), and document analysis
+- **Sub-Agent Delegation** — Spawns isolated sub-agents with full document context for deep analysis, summarization, and cross-document comparison
+- **Auto Thread Titles** — Conversations are automatically summarized into concise thread titles
+- **Warm, Modern UI** — Anthropic-inspired light theme with animated welcome screen, Markdown rendering, and expandable tool call cards
 
-**你不需要知道如何编程。** 你需要具备技术思维，并愿意学习 API、数据库和系统架构。
+## Tech Stack
 
-## 你将构建什么
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React, TypeScript, Tailwind CSS, Vite |
+| Backend | Python, FastAPI |
+| Database | Supabase (Postgres + pgvector + Auth + Storage) |
+| LLM | OpenAI-compatible API (DeepSeek, OpenAI, OpenRouter, Ollama, etc.) |
+| Embeddings | DashScope (Alibaba Cloud) or any OpenAI-compatible endpoint |
+| OCR | Mistral OCR (for images and scanned PDFs) |
+| Observability | LangSmith |
 
-- **聊天界面**，具有线程对话、流式传输、工具调用和子代理推理
-- **文件导入**，具有拖放上传和处理状态
-- **完整 RAG 管道**：分块、嵌入、混合搜索、重排序
-- **代理模式**：文本转 SQL、网页搜索、具有隔离上下文的子代理
+## Prerequisites
 
-## 技术栈
+- **Python 3.11+** with `pip`
+- **Node.js 18+** with `npm`
+- **Supabase** account (free tier works) with a project set up
+- **LLM API key** — any OpenAI-compatible provider (DeepSeek, OpenAI, OpenRouter, Ollama, etc.)
+- **Embedding API key** — DashScope (default) or any OpenAI-compatible embedding endpoint
+- **Mistral API key** (optional) — only needed for OCR on images and scanned PDFs
 
+## Setup
 
-| 层次    | 技术                                       |
-| ----- | ---------------------------------------- |
-| 前端    | React、TypeScript、Tailwind、shadcn/ui、Vite |
-| 后端    | Python、FastAPI                           |
-| 数据库   | Supabase（Postgres + pgvector + 认证 + 存储）  |
-| 文件处理  | Docling                                  |
-| AI 模型 | 本地（LM Studio）或云端（OpenAI、OpenRouter）      |
-| 可观测性  | LangSmith                                |
+### 1. Clone and install dependencies
 
+```bash
+git clone git@github.com:EveryCatchLiu/AgentRAG.git
+cd AgentRAG
 
-## 8 个模块
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -e .
+cd ..
 
-1. **应用外壳** — 认证、聊天 UI、使用 OpenAI Responses API 的托管 RAG
-2. **自建检索 + 记忆** — 导入、pgvector、切换到通用 Completions API
-3. **记录管理器** — 内容哈希、去重
-4. **元数据提取** — LLM 提取的元数据、过滤检索
-5. **多格式支持** — 通过 Docling 支持 PDF、DOCX、HTML、Markdown
-6. **混合搜索和重排序** — 关键词 + 向量搜索、RRF、重排序
-7. **附加工具** — 文本转 SQL、网页搜索回退
-8. **子代理** — 隔离上下文、文件分析委派
+# Frontend
+cd frontend
+npm install
+cd ..
+```
 
-## 开始使用
+### 2. Configure environment
 
-1. 克隆此仓库
-2. 安装 [Claude Code](https://docs.anthropic.com/en/docs/claude-code)
-3. 在你的 IDE 中打开（Cursor、VS Code 等）
-4. 在终端中运行 `claude`
-5. 使用 `/onboard` 命令开始
+Copy the example env files and fill in your credentials:
 
-## 文档
+**`backend/.env`:**
+```env
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-- [PRD.md](./PRD.md) — 要构建什么（8 个模块的详细说明）
-- [CLAUDE.md](./CLAUDE.md) — Claude Code 的上下文
-- [PROGRESS.md](./PROGRESS.md) — 追踪你的构建进度
+# LLM (OpenAI-compatible)
+OPENAI_API_KEY=your-api-key
+OPENAI_BASE_URL=https://api.deepseek.com
+MODEL=deepseek-chat
 
-## 加入社区
+# Embedding
+EMBEDDING_API_KEY=your-dashscope-key
+EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+EMBEDDING_MODEL=text-embedding-v3
 
-如果你想与数百位构建生产级 AI 和 RAG 系统的开发者交流，加入我们的 [The AI Automators 社区](https://www.skool.com/aiagent/about)。分享你的进度，在遇到困难时获得帮助，看看其他人在构建什么。
+# Mistral OCR (optional — for image/scanned PDF support)
+MISTRAL_API_KEY=your-mistral-key
+
+# LangSmith (optional — for tracing)
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=your-langsmith-key
+LANGCHAIN_PROJECT=agentrag
+```
+
+**`frontend/.env`:**
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 3. Set up Supabase
+
+Run the migration SQL files in `backend/migrations/` in your Supabase SQL Editor, in numerical order:
+1. `001_create_tables.sql` — Core schema (files, chunks, threads, messages, user_settings)
+2. `002_match_chunks.sql` — Vector search function
+3. `003_add_chunk_settings.sql` — Chunk size/overlap settings
+4. `004_content_hash_dedup.sql` — Deduplication support
+5. `005_file_metadata.sql` — File metadata columns
+6. `006_match_chunks_metadata_filter.sql` — Metadata filtering in search
+7. `007_fix_match_chunks_overload.sql` — Fix function overload
+8. `008_cascade_delete_chunks.sql` — Cascade deletes
+9. `009_keyword_search.sql` — Keyword search RPC
+10. `010_subagent_support.sql` — Metadata column for messages
+
+Also enable Row-Level Security (RLS) on all tables and set up policies so users can only see their own data.
+
+### 4. Start the application
+
+```bash
+# Terminal 1 — Backend
+cd backend
+source venv/bin/activate
+uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2 — Frontend
+cd frontend
+npm run dev
+```
+
+Open **http://localhost:5173** in your browser.
+
+## Architecture
+
+```
+User → React Frontend → FastAPI Backend → Supabase (DB + Auth + Storage)
+                              ↓
+                    OpenAI-compatible LLM API
+                    (DeepSeek / OpenAI / OpenRouter / Ollama)
+                              ↓
+                    Tool Execution:
+                    ├── search_web (DuckDuckGo + weather API)
+                    ├── query_database (NL → SQL)
+                    └── delegate_to_subagent (isolated doc analysis)
+                              ↓
+                    SSE Streaming → Frontend renders Markdown
+```
+
+### File Processing Pipeline
+
+```
+Upload → Extract text → Chunk → Embed → Store in pgvector
+  │          │
+  │          ├── PDF: PyMuPDF (text) / Mistral OCR (scanned)
+  │          ├── DOCX: python-docx
+  │          ├── Images (PNG/JPG/TIFF): Mistral OCR
+  │          └── HTML/MD/CSV/TSV: parsers
+  │
+  └── LLM extracts metadata (title, author, topics, summary) → stored in files.metadata
+```
+
+## Model Configuration Notes
+
+- **DeepSeek models** (`deepseek-chat`, `deepseek-reasoner`) are thinking models that generate `reasoning_content`. The backend preserves this in message history. Use at least `max_tokens=500` for any generation task — smaller values may produce empty output as tokens get consumed by reasoning.
+
+- **Any OpenAI-compatible endpoint** works — set `OPENAI_BASE_URL` and `MODEL` in `backend/.env`. Tested with DeepSeek, OpenAI, and OpenRouter.
+
+- **Embeddings** default to DashScope's `text-embedding-v3` (1024-dim). If switching providers, update the `match_chunks` Postgres function to match the new embedding dimension.
+
+- **Mistral OCR** uses `mistral-ocr-latest` model. Images are base64-encoded and sent via the Mistral SDK. PDFs are first tried with PyMuPDF; if the extracted text is < 100 characters, Mistral OCR is used as fallback.
+
+## API Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/threads?user_id=` | List threads |
+| `POST` | `/api/threads?user_id=` | Create thread |
+| `DELETE` | `/api/threads/:id?user_id=` | Delete thread |
+| `GET` | `/api/threads/:id/messages?user_id=` | Get messages |
+| `POST` | `/api/threads/:id/messages?user_id=` | Send message (SSE stream) |
+| `GET` | `/api/settings?user_id=` | Get user settings |
+| `PUT` | `/api/settings/llm?user_id=` | Update LLM settings |
+| `PUT` | `/api/settings/embedding?user_id=` | Update embedding settings |
+| `POST` | `/api/files/upload?user_id=` | Upload file |
+| `GET` | `/api/files?user_id=` | List files |
+| `DELETE` | `/api/files/:id?user_id=` | Delete file |
+| `GET` | `/api/files/metadata/filters?user_id=` | Get filter options |
+
+## SSE Events
+
+The chat endpoint streams Server-Sent Events:
+
+| Event | Description |
+|-------|-------------|
+| `reasoning` | Thinking model's reasoning trace |
+| `tool_calls` | Tool calls executed (with results) |
+| `sources` | Retrieved document chunks |
+| `data` | Streaming text content |
+| `done` | Response complete |
+| `error` | Error message |
+
+## Project Structure
+
+```
+AgentRAG/
+├── backend/
+│   ├── migrations/       # SQL migration files
+│   ├── src/
+│   │   ├── routers/      # FastAPI route handlers
+│   │   ├── agent.py      # Sub-agent executor
+│   │   ├── config.py     # Environment configuration
+│   │   ├── main.py       # FastAPI app entry
+│   │   ├── models.py     # Pydantic models
+│   │   ├── openai_client.py  # LLM + Mistral clients
+│   │   ├── supabase_client.py  # Supabase client
+│   │   └── tools.py      # Tool definitions & executors
+│   └── pyproject.toml
+├── frontend/
+│   ├── src/
+│   │   ├── components/   # React components
+│   │   ├── contexts/     # Auth context
+│   │   ├── lib/          # Store, Supabase client
+│   │   └── pages/        # Chat, Import, Login, Settings
+│   └── package.json
+└── README.md
+```
