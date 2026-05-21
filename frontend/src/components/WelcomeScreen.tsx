@@ -1,36 +1,27 @@
-import { FileText, Upload, Search, Bot, Database, ArrowRight } from "lucide-react"
+import { FileText, Search, Bot, Database, ArrowRight } from "lucide-react"
 import { Link } from "react-router-dom"
 
 const features = [
   {
     icon: FileText,
     title: "Document Q&A",
-    desc: "Ask questions and get answers grounded in your documents. Supports PDF, DOCX, markdown and more.",
-    action: "Create a thread to start",
+    desc: "Upload PDFs, images, and documents, then ask questions grounded in your knowledge base. Mistral OCR handles scanned files automatically.",
+    action: "Create a thread or import files",
     color: "from-[#e8954c] to-[#d4704a]",
     bg: "bg-[#fefaf5] border-[#f0d8b8]",
   },
   {
-    icon: Upload,
-    title: "File Import & OCR",
-    desc: "Upload PDFs, images, and documents. Mistral OCR extracts text from scanned files and images automatically.",
-    action: "Go to Import",
-    link: "/import",
+    icon: Search,
+    title: "Web Search",
+    desc: "Real-time search for current events, weather, and news — automatically triggered when documents can't answer your question.",
+    action: "Ask about weather, news, etc.",
     color: "from-[#d4905e] to-[#c4784a]",
     bg: "bg-[#fdf8f2] border-[#f0d8c0]",
   },
   {
-    icon: Search,
-    title: "Web Search",
-    desc: "Real-time web search for current events, weather, news — automatically triggered when documents can't answer.",
-    action: "Ask about weather, news, etc.",
-    color: "from-[#c48850] to-[#b06838]",
-    bg: "bg-[#fdf6f0] border-[#eed5b8]",
-  },
-  {
     icon: Bot,
     title: "Sub-agent Analysis",
-    desc: "Deep full-document analysis with isolated sub-agents. Ideal for summaries, comparisons, and detailed reviews.",
+    desc: "Deep full-document analysis with isolated sub-agents. Perfect for summaries, comparisons, and detailed reviews across multiple files.",
     action: "Ask to summarize a document",
     color: "from-[#e8954c] to-[#c47042]",
     bg: "bg-[#fefaf5] border-[#f0d8b8]",
@@ -38,7 +29,7 @@ const features = [
   {
     icon: Database,
     title: "Hybrid Search",
-    desc: "Vector + keyword retrieval with RRF fusion and LLM reranking for the most relevant results across all documents.",
+    desc: "Vector + keyword retrieval with RRF fusion and LLM reranking delivers the most relevant results across all your documents.",
     action: "Try searching across files",
     color: "from-[#d4905e] to-[#b86840]",
     bg: "bg-[#fdf8f2] border-[#f0d8c0]",
@@ -101,7 +92,7 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
         </div>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-2xl w-full">
           {features.map((f, i) => (
             <FeatureCard key={i} {...f} />
           ))}
