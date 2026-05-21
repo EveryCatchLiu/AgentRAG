@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import ReactMarkdown from "react-markdown"
-import remarkGfm from "remark-gfm"
 
 interface MarkdownMessageProps {
   content: string
@@ -17,7 +16,6 @@ export default function MarkdownMessage({ content, className = "" }: MarkdownMes
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
         components={{
           pre: ({ children }: CompProps) => (
             <pre className="my-2 overflow-x-auto rounded-lg bg-[#f5f1ec] p-3 text-xs text-[#5c4a3a]">
