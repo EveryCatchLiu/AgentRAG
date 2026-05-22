@@ -168,6 +168,10 @@ export default function Import() {
         return <CheckCircle2 className="h-4 w-4 text-green-500" />
       case "error":
         return <XCircle className="h-4 w-4 text-red-500" />
+      case "outdated":
+        return <FileText className="h-4 w-4 text-amber-500" />
+      default:
+        return <FileText className="h-4 w-4 text-muted-foreground" />
     }
   }
 
@@ -242,11 +246,11 @@ export default function Import() {
             <div key={file.id}>
               <div
                 className={`flex items-center justify-between rounded-md border px-4 py-3 transition-colors ${
-                  file.status === "done"
+                  file.status === "done" || file.status === "outdated"
                     ? "cursor-pointer hover:bg-accent/50"
                     : ""
                 } ${selectedFileId === file.id ? "bg-accent border-primary/30" : ""}`}
-                onClick={() => file.status === "done" && handleFileClick(file.id)}
+                onClick={() => (file.status === "done" || file.status === "outdated") && handleFileClick(file.id)}
               >
                 <div className="flex items-center gap-3">
                   {statusIcon(file.status)}
@@ -257,6 +261,7 @@ export default function Import() {
                       {file.status === "processing" && "处理中..."}
                       {file.status === "pending" && "等待处理"}
                       {file.status === "error" && "处理失败 - 可能为扫描版PDF或文件损坏"}
+                      {file.status === "outdated" && "需要重新处理 - Embedding 维度已更新"}
                     </p>
                   </div>
                 </div>
