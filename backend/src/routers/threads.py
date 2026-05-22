@@ -109,8 +109,17 @@ def _execute_delegation(args: dict, call_id: str, llm_client, model: str) -> dic
         if media.get("type") == "image" and media.get("url"):
             chunk_images.append(media["url"])
 
+    # Auto-switch to Bailian client if document has images
+    if chunk_images:
+        from src.openai_client import create_bailian_client
+        _client = create_bailian_client()
+        _model = settings.multimodal_model
+    else:
+        _client = llm_client
+        _model = model
+
     executor = SubAgentExecutor(
-        llm_client=llm_client, model=model,
+        llm_client=_client, model=_model,
         task=task, full_text=full_text, file_metadata=file_meta,
         chunk_images=chunk_images,
     )
@@ -154,7 +163,7 @@ def _execute_decomposition(args: dict, call_id: str, llm_client, model: str, use
             "result": "Error: No file IDs provided.", "status": "error",
         }
 
-    full_text, file_meta = get_full_document_text(file_ids)
+    full_text, file_meta, media_map = get_full_document_text(file_ids)
     if not full_text.strip():
         return {
             "id": call_id, "name": "decompose_and_execute",
@@ -162,9 +171,22 @@ def _execute_decomposition(args: dict, call_id: str, llm_client, model: str, use
             "result": f"Error: Documents not found for {file_ids}", "status": "error",
         }
 
+    # Auto-switch to Bailian if document has images
+    has_images = any(
+        m.get("type") == "image" and m.get("url")
+        for m in media_map.values()
+    )
+    if has_images:
+        from src.openai_client import create_bailian_client
+        _client = create_bailian_client()
+        _model = settings.multimodal_model
+    else:
+        _client = llm_client
+        _model = model
+
     orchestrator = TaskOrchestrator(
-        llm_client=llm_client,
-        model=model,
+        llm_client=_client,
+        model=_model,
         user_settings=user_settings,
         event_queue=event_queue,
     )
@@ -491,14 +513,19 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         print(f"[DEBUG] Injecting {len(chunk_images)} chunk images into user content", flush=True)
         parts = [{"type": "text", "text": request.content}]
         for img_url in chunk_images:
+            print(f"[DEBUG] Downloading chunk image: {img_url[:80]}...", flush=True)
             try:
                 img_data = _download_image_for_llm(img_url)
                 if img_data:
+                    print(f"[DEBUG] Chunk image downloaded OK, adding to content", flush=True)
                     parts.append({
                         "type": "image_url",
                         "image_url": {"url": img_data},
                     })
-            except Exception:
+                else:
+                    print(f"[DEBUG] Chunk image download returned None", flush=True)
+            except Exception as e:
+                print(f"[DEBUG] Chunk image download exception: {e}", flush=True)
                 pass
         user_content = parts
     # else: user_content stays as plain text string
