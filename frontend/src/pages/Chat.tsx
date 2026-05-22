@@ -92,9 +92,10 @@ export default function Chat() {
       let fullText = ""
       let currentEvent = ""
       let streamDone = false
+      let timeout: ReturnType<typeof setTimeout> | null = null
 
       // Safety timeout: stop streaming after 120s no matter what
-      const timeout = setTimeout(() => {
+      timeout = setTimeout(() => {
         streamDone = true
         try { reader.cancel() } catch (_) { /* ignore */ }
       }, 120000)
