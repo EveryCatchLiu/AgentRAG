@@ -5,7 +5,7 @@ import { Settings as SettingsIcon, MessageSquare, Upload } from "lucide-react"
 
 export default function SettingsPage() {
   const { user } = useAuth()
-  const [activeTab, setActiveTab] = useState<"llm" | "embedding">("llm")
+  const [activeTab, setActiveTab] = useState<"llm" | "embedding" | "retrieval" | "tools">("llm")
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -23,6 +23,19 @@ export default function SettingsPage() {
     embedding_model: "text-embedding-v3",
     chunk_size: 1000,
     chunk_overlap: 200,
+  })
+
+  const [retrievalForm, setRetrievalForm] = useState({
+    retrieval_method: "hybrid" as "hybrid" | "vector" | "keyword",
+    enable_reranker: false,
+    reranker_type: "cohere" as "cohere" | "openai",
+    reranker_api_key: "",
+    reranker_base_url: "",
+    reranker_model: "",
+  })
+
+  const [toolsForm, setToolsForm] = useState({
+    tavily_api_key: "",
   })
 
   const loadSettings = useCallback(async () => {
@@ -43,6 +56,17 @@ export default function SettingsPage() {
         embedding_model: data.embedding_model || "text-embedding-v3",
         chunk_size: data.chunk_size || 1000,
         chunk_overlap: data.chunk_overlap || 200,
+      })
+      setRetrievalForm({
+        retrieval_method: data.retrieval_method || "hybrid",
+        enable_reranker: data.enable_reranker || false,
+        reranker_type: data.reranker_type || "cohere",
+        reranker_api_key: data.reranker_api_key || "",
+        reranker_base_url: data.reranker_base_url || "",
+        reranker_model: data.reranker_model || "",
+      })
+      setToolsForm({
+        tavily_api_key: data.tavily_api_key || "",
       })
     }
   }, [user])
@@ -73,6 +97,34 @@ export default function SettingsPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(embedForm),
+    })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleSaveRetrieval = async () => {
+    if (!user) return
+    setSaving(true)
+    setSaved(false)
+    await fetch(`/api/settings/retrieval?user_id=${user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(retrievalForm),
+    })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleSaveTools = async () => {
+    if (!user) return
+    setSaving(true)
+    setSaved(false)
+    await fetch(`/api/settings/tools?user_id=${user.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(toolsForm),
     })
     setSaving(false)
     setSaved(true)
@@ -117,6 +169,26 @@ export default function SettingsPage() {
             }`}
           >
             Embedding
+          </button>
+          <button
+            onClick={() => setActiveTab("retrieval")}
+            className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "retrieval"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Retrieval
+          </button>
+          <button
+            onClick={() => setActiveTab("tools")}
+            className={`border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "tools"
+                ? "border-primary text-foreground"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Tools
           </button>
         </div>
       </div>
@@ -267,6 +339,204 @@ export default function SettingsPage() {
               className="rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-6 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
             >
               {saving ? "Saving..." : saved ? "Saved!" : "Save Embedding Settings"}
+            </button>
+          </div>
+        )}
+
+        {activeTab === "retrieval" && (
+          <div className="mx-auto max-w-xl space-y-6">
+            {/* Retrieval Method */}
+            <div>
+              <label className="mb-3 block text-sm font-medium">Retrieval Method</label>
+              <div className="space-y-2">
+                {[
+                  { value: "hybrid", label: "Hybrid (Vector + Keyword)", desc: "Best recall — combines semantic and keyword search with RRF fusion" },
+                  { value: "vector", label: "Vector only", desc: "Semantic similarity search via embeddings" },
+                  { value: "keyword", label: "Keyword only", desc: "Text-based matching via pg_trgm" },
+                ].map((opt) => (
+                  <label
+                    key={opt.value}
+                    className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+                      retrievalForm.retrieval_method === opt.value
+                        ? "border-[#e8954c] bg-[#fefaf5]"
+                        : "border-border hover:bg-[#fefaf5]"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="retrieval_method"
+                      value={opt.value}
+                      checked={retrievalForm.retrieval_method === opt.value}
+                      onChange={(e) =>
+                        setRetrievalForm({
+                          ...retrievalForm,
+                          retrieval_method: e.target.value as "hybrid" | "vector" | "keyword",
+                        })
+                      }
+                      className="mt-0.5 accent-[#e8954c]"
+                    />
+                    <div>
+                      <div className="text-sm font-medium">{opt.label}</div>
+                      <div className="text-xs text-muted-foreground">{opt.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <hr className="border-border" />
+
+            {/* Enable Reranker */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium">Enable Reranker</label>
+                  <p className="text-xs text-muted-foreground">
+                    Use a dedicated reranker API to re-score and re-rank retrieved chunks
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={retrievalForm.enable_reranker}
+                  onClick={() =>
+                    setRetrievalForm({
+                      ...retrievalForm,
+                      enable_reranker: !retrievalForm.enable_reranker,
+                    })
+                  }
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus:outline-none focus:ring-2 focus:ring-[#e8954c] focus:ring-offset-2 ${
+                    retrievalForm.enable_reranker ? "bg-[#e8954c]" : "bg-[#d4c8b8]"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform ring-0 transition-transform ${
+                      retrievalForm.enable_reranker ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Reranker API Config (collapsible) */}
+            {retrievalForm.enable_reranker && (
+              <div className="space-y-4 rounded-lg border border-border bg-[#fefaf5] p-4">
+                {/* Reranker Type */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Reranker Type</label>
+                  <select
+                    value={retrievalForm.reranker_type}
+                    onChange={(e) => {
+                      const val = e.target.value as "cohere" | "openai"
+                      const defaults =
+                        val === "cohere"
+                          ? { reranker_base_url: "https://api.cohere.com/v2", reranker_model: "rerank-v3.5" }
+                          : { reranker_base_url: "", reranker_model: "" }
+                      setRetrievalForm({ ...retrievalForm, reranker_type: val, ...defaults })
+                    }}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="cohere">Cohere (Native API)</option>
+                    <option value="openai">OpenAI Compatible</option>
+                  </select>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {retrievalForm.reranker_type === "cohere"
+                      ? "Calls Cohere POST /v2/rerank with query + documents"
+                      : "Uses Chat Completions prompt-based scoring"}
+                  </p>
+                </div>
+
+                {/* API Key */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Reranker API Key</label>
+                  <input
+                    type="password"
+                    value={retrievalForm.reranker_api_key}
+                    onChange={(e) => setRetrievalForm({ ...retrievalForm, reranker_api_key: e.target.value })}
+                    placeholder="sk-... or Cohere API key"
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                {/* Base URL */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Base URL</label>
+                  <input
+                    type="text"
+                    value={retrievalForm.reranker_base_url}
+                    onChange={(e) => setRetrievalForm({ ...retrievalForm, reranker_base_url: e.target.value })}
+                    placeholder={retrievalForm.reranker_type === "cohere" ? "https://api.cohere.com/v2" : "https://api.openai.com/v1"}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+
+                {/* Model */}
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Model</label>
+                  <input
+                    type="text"
+                    value={retrievalForm.reranker_model}
+                    onChange={(e) => setRetrievalForm({ ...retrievalForm, reranker_model: e.target.value })}
+                    placeholder={retrievalForm.reranker_type === "cohere" ? "rerank-v3.5" : "gpt-4o-mini"}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Save */}
+            <button
+              onClick={handleSaveRetrieval}
+              disabled={saving}
+              className="rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-6 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {saving ? "Saving..." : saved ? "Saved!" : "Save Retrieval Settings"}
+            </button>
+          </div>
+        )}
+
+        {activeTab === "tools" && (
+          <div className="mx-auto max-w-xl space-y-6">
+            <div className="rounded-lg border border-[#e8954c] bg-[#fefaf5] p-4">
+              <p className="text-sm text-[#8b5e3c]">
+                Configure third-party API keys for the agent's tools. These replace the built-in fallback search methods.
+              </p>
+            </div>
+
+            {/* Tavily Search API */}
+            <div className="space-y-4">
+              <div>
+                <div className="mb-1.5 flex items-center gap-2">
+                  <label className="text-sm font-medium">Tavily Search API Key</label>
+                  <span className="rounded bg-[#e8954c]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#e8954c]">Web Search</span>
+                </div>
+                <p className="mb-2 text-xs text-muted-foreground">
+                  Replaces DuckDuckGo with Tavily's AI-optimized search API for more accurate, real-time web results.
+                </p>
+                <input
+                  type="password"
+                  value={toolsForm.tavily_api_key}
+                  onChange={(e) => setToolsForm({ ...toolsForm, tavily_api_key: e.target.value })}
+                  placeholder="tvly-dev-... (default key configured)"
+                  className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Get your key at{" "}
+                  <a href="https://app.tavily.com" target="_blank" rel="noreferrer" className="text-[#e8954c] hover:underline">
+                    app.tavily.com
+                  </a>
+                </p>
+              </div>
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={handleSaveTools}
+              disabled={saving}
+              className="rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] px-6 py-2 text-sm font-medium text-white shadow-sm hover:opacity-90 disabled:opacity-50 transition-opacity"
+            >
+              {saving ? "Saving..." : saved ? "Saved!" : "Save Tools Settings"}
             </button>
           </div>
         )}

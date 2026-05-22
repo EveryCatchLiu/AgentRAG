@@ -431,48 +431,92 @@ Document chunks:
 For each chunk, output only a JSON array of scores like: [score1, score2, ...]"""
 
 
-def _llm_rerank(query: str, chunks: List[dict], user_settings: dict = None, top_k: int = 5) -> List[dict]:
-    """Use LLM as a cross-encoder to re-rank chunks by relevance to the query."""
-    if len(chunks) <= top_k:
-        return chunks
+def _rerank_cohere(query: str, chunks: List[dict], api_key: str, base_url: str, model: str) -> List[dict]:
+    """Use Cohere's native Rerank API to re-rank chunks."""
+    import urllib.request
 
-    from src.openai_client import create_llm_client
-    from src.config import settings
+    url = (base_url or "https://api.cohere.com/v2").rstrip("/") + "/rerank"
+    documents = [chunk["content"][:1000] for chunk in chunks]
 
-    # Build chunks text for the prompt
+    body = json.dumps({
+        "model": model or "rerank-v3.5",
+        "query": query,
+        "documents": documents,
+        "top_n": len(chunks),
+    }).encode("utf-8")
+
+    req = urllib.request.Request(url, data=body, headers={
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read().decode())
+
+    results = data.get("results", [])
+    for r in results:
+        idx = r.get("index", 0)
+        score = r.get("relevance_score", 0)
+        chunks[idx]["similarity"] = round(score, 4)
+        chunks[idx]["rerank_score"] = round(score * 10, 1)
+
+    chunks.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
+    return chunks
+
+
+def _rerank_openai(query: str, chunks: List[dict], api_key: str, base_url: str, model: str) -> List[dict]:
+    """Use OpenAI-compatible Chat Completions to re-rank chunks (prompt-based scoring)."""
+    from src.openai_client import OpenAI
+
     chunks_text_parts = []
     for i, chunk in enumerate(chunks):
         preview = chunk["content"][:500]
         chunks_text_parts.append(f"[{i}] {preview}")
     chunks_text = "\n\n".join(chunks_text_parts)
 
-    llm_client = create_llm_client(
-        api_key=user_settings.get("llm_api_key", "") if user_settings else "",
-        base_url=user_settings.get("llm_base_url", "") if user_settings else "",
+    client = OpenAI(api_key=api_key, base_url=base_url)
+
+    completion = client.chat.completions.create(
+        model=model or "gpt-4o-mini",
+        messages=[{
+            "role": "user",
+            "content": RERANK_PROMPT.format(query=query, chunks_text=chunks_text),
+        }],
+        max_tokens=200,
     )
-    model = (user_settings.get("llm_model") if user_settings else None) or settings.model
+    raw = completion.choices[0].message.content.strip()
+    scores = json.loads(raw)
+    if isinstance(scores, list) and len(scores) == len(chunks):
+        for i, score in enumerate(scores):
+            chunks[i]["similarity"] = round(float(score) / 10.0, 4)
+            chunks[i]["rerank_score"] = round(float(score), 1)
+        chunks.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
+
+    return chunks
+
+
+def _rerank(query: str, chunks: List[dict], user_settings: dict) -> List[dict]:
+    """Re-rank chunks using the configured reranker. Falls back to raw scores on error."""
+    if not user_settings or not user_settings.get("enable_reranker"):
+        return chunks
+
+    reranker_type = user_settings.get("reranker_type", "cohere")
+    api_key = user_settings.get("reranker_api_key", "")
+    model = user_settings.get("reranker_model", "")
+
+    if not api_key:
+        print("Re-rank skipped: no reranker API key configured")
+        return chunks
 
     try:
-        completion = llm_client.chat.completions.create(
-            model=model,
-            messages=[{
-                "role": "user",
-                "content": RERANK_PROMPT.format(query=query, chunks_text=chunks_text),
-            }],
-            max_tokens=200,
-        )
-        raw = completion.choices[0].message.content.strip()
-        # Parse the JSON array
-        scores = json.loads(raw)
-        if isinstance(scores, list) and len(scores) == len(chunks):
-            for i, score in enumerate(scores):
-                chunks[i]["similarity"] = round(float(score) / 10.0, 4)
-                chunks[i]["rerank_score"] = round(float(score), 1)
-            chunks.sort(key=lambda x: x.get("rerank_score", 0), reverse=True)
+        if reranker_type == "cohere":
+            base_url = user_settings.get("reranker_base_url", "")
+            return _rerank_cohere(query, chunks, api_key, base_url, model)
+        else:
+            base_url = user_settings.get("reranker_base_url", "")
+            return _rerank_openai(query, chunks, api_key, base_url, model)
     except Exception as e:
-        print(f"Re-rank failed, using RRF scores: {e}")
-
-    return chunks[:top_k]
+        print(f"Re-rank failed, using pre-rerank scores: {e}")
+        return chunks
 
 
 def search_chunks(
@@ -483,44 +527,63 @@ def search_chunks(
     filter_topics: List[str] | None = None,
     filter_doc_types: List[str] | None = None,
 ) -> List[dict]:
-    """Hybrid search: vector + keyword → RRF fusion → diversity → LLM rerank."""
+    """Hybrid search: vector + keyword → RRF fusion → diversity → rerank.
+
+    Retrieval method is controlled by user_settings.retrieval_method:
+    - "hybrid": vector + keyword + RRF fusion (default)
+    - "vector": vector-only semantic search
+    - "keyword": keyword-only text search
+    """
+    retrieval_method = (user_settings or {}).get("retrieval_method", "hybrid")
     fetch_count = max(top_k * 4, 20)
 
     # 1. Vector search
     vector_results = []
-    embedding = get_embedding(query, user_settings)
-    try:
-        result = supabase.rpc(
-            "match_chunks",
-            {
-                "query_embedding": embedding,
-                "match_threshold": 0.3,
-                "match_count": fetch_count,
-                "filter_file_ids": filter_file_ids,
-                "filter_topics": filter_topics,
-                "filter_doc_types": filter_doc_types,
-            },
-        ).execute()
-        if result.data:
-            vector_results = result.data
-    except Exception:
-        pass
+    if retrieval_method in ("hybrid", "vector"):
+        embedding = get_embedding(query, user_settings)
+        try:
+            result = supabase.rpc(
+                "match_chunks",
+                {
+                    "query_embedding": embedding,
+                    "match_threshold": 0.3,
+                    "match_count": fetch_count,
+                    "filter_file_ids": filter_file_ids,
+                    "filter_topics": filter_topics,
+                    "filter_doc_types": filter_doc_types,
+                },
+            ).execute()
+            if result.data:
+                vector_results = result.data
+        except Exception:
+            pass
 
     # 2. Keyword search
-    keyword_results = _keyword_search(
-        query, match_count=fetch_count,
-        filter_file_ids=filter_file_ids,
-        filter_topics=filter_topics,
-        filter_doc_types=filter_doc_types,
-    )
+    keyword_results = []
+    if retrieval_method in ("hybrid", "keyword"):
+        keyword_results = _keyword_search(
+            query, match_count=fetch_count,
+            filter_file_ids=filter_file_ids,
+            filter_topics=filter_topics,
+            filter_doc_types=filter_doc_types,
+        )
 
-    # 3. RRF fusion
-    if vector_results or keyword_results:
+    # 3. Combine results
+    if retrieval_method == "hybrid" and (vector_results or keyword_results):
         fused = _rrf_fusion(vector_results, keyword_results)
+    elif retrieval_method == "vector" and vector_results:
+        fused = vector_results
+    elif retrieval_method == "keyword" and keyword_results:
+        fused = keyword_results
+    else:
+        fused = []
+
+    if fused:
         # 4. Diversify
         diversified = _diversify_chunks(fused, top_k * 3, max_per_file=3)
-        # 5. LLM re-rank
-        return _llm_rerank(query, diversified, user_settings, top_k)
+        # 5. Rerank (reads enable_reranker from user_settings)
+        reranked = _rerank(query, diversified, user_settings)
+        return reranked[:top_k]
 
     # Absolute fallback: keyword matching
     keywords = query.lower().split()

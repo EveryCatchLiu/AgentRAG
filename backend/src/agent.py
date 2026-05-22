@@ -7,13 +7,13 @@ from src.config import settings
 from src.models import SubAgentResult, ToolCallRecord
 
 
-# Sub-agent tools: only document search within loaded text
+# Sub-agent tools: document search, web search, and database query
 SUBAGENT_TOOLS = [
     {
         "type": "function",
         "function": {
             "name": "search_document",
-            "description": "Search within the loaded document for specific passages matching a query. Use to find relevant sections, key facts, or specific mentions in the document text.",
+            "description": "Search within loaded documents for specific passages matching a query. Use to find relevant sections, key facts, or specific mentions in the document text.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -26,18 +26,54 @@ SUBAGENT_TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_web",
+            "description": "Search the web for current information. Use when the document text doesn't contain relevant information, or for recent events, news, or real-time data.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The search query.",
+                    },
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "query_database",
+            "description": "Query the knowledge base database for metadata and statistics about files, chunks, topics, etc.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "The question to answer from the database, in natural language.",
+                    },
+                },
+                "required": ["question"],
+            },
+        },
+    },
 ]
 
-SUBAGENT_SYSTEM_PROMPT = """You are a focused analysis sub-agent. You have been given the FULL TEXT of one or more documents.
+SUBAGENT_SYSTEM_PROMPT = """You are a focused analysis sub-agent. You have been given the FULL TEXT of one or more documents, and access to web search and database tools.
 
 Your task: {task}
 
 Rules:
 1. Analyze the full document text provided below thoroughly.
-2. Use search_document if you need to find specific passages or verify details.
-3. Be thorough, precise, and well-structured in your analysis.
-4. Answer in the same language as the user's task description.
-5. Return your complete analysis as the final answer.
+2. Use search_document if you need to find specific passages or verify details in the documents.
+3. Use search_web to search the internet for current information, facts, or context not in the documents.
+4. Use query_database to check statistics about the knowledge base (file counts, topics, etc.).
+5. Be thorough, precise, and well-structured in your analysis.
+6. Answer in the same language as the user's task description.
+7. Return your complete analysis as the final answer.
 
 Document metadata:
 {file_metadata}
@@ -122,12 +158,14 @@ class SubAgentExecutor:
         task: str,
         full_text: str,
         file_metadata: dict,
+        tavily_api_key: str = "",
     ):
         self.llm_client = llm_client
         self.model = model
         self.task = task
         self.full_text = full_text
         self.file_metadata = file_metadata
+        self.tavily_api_key = tavily_api_key
         self.tool_calls: list[ToolCallRecord] = []
         self.reasoning: list[str] = []
         self.max_rounds = 2
@@ -206,6 +244,12 @@ class SubAgentExecutor:
 
                 if tool_name == "search_document":
                     result = execute_search_document(args.get("query", ""), self.full_text)
+                elif tool_name == "search_web":
+                    from src.tools import execute_search_web
+                    result = execute_search_web(args.get("query", ""), api_key=self.tavily_api_key)
+                elif tool_name == "query_database":
+                    from src.tools import execute_query_database
+                    result = execute_query_database(args.get("question", ""))
                 else:
                     result = f"Unknown sub-agent tool: {tool_name}"
 

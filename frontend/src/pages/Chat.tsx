@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { useChatStore, type Message, type Source, type ToolCall } from "../lib/store"
+import { useChatStore, type Message, type Source, type ToolCall, type Decomposition, type Subtask } from "../lib/store"
 import { Plus, Trash2, Loader2, FolderInput, Settings } from "lucide-react"
 import SourceList from "../components/SourceCard"
 import ToolCallCard from "../components/ToolCallCard"
 import ReasoningPanel from "../components/ReasoningPanel"
 import MarkdownMessage from "../components/MarkdownMessage"
+import DecompositionCard from "../components/DecompositionCard"
 import WelcomeScreen from "../components/WelcomeScreen"
 import FilterBar from "../components/FilterBar"
 
@@ -113,6 +114,27 @@ export default function Chat() {
             } else if (currentEvent === "reasoning") {
               const reasoning: string[] = JSON.parse(data)
               setReasoningAt(assistantIndex, reasoning)
+            } else if (currentEvent === "decomposition") {
+              const data_obj = JSON.parse(data)
+              const decomposition: Decomposition = {
+                analysis: data_obj.analysis || "",
+                subtasks: (data_obj.subtasks || []).map((s: Record<string, unknown>) => ({
+                  id: s.id as string,
+                  description: s.description as string,
+                  depends_on: (s.depends_on as string[]) || [],
+                  status: "pending" as const,
+                })),
+              }
+              setDecompositionAt(assistantIndex, decomposition)
+            } else if (currentEvent === "subtask_start") {
+              const data_obj = JSON.parse(data)
+              updateSubtaskAt(assistantIndex, data_obj.task_id, "running")
+            } else if (currentEvent === "subtask_done") {
+              const data_obj = JSON.parse(data)
+              updateSubtaskAt(assistantIndex, data_obj.task_id, "done", data_obj.answer)
+            } else if (currentEvent === "subtask_error") {
+              const data_obj = JSON.parse(data)
+              updateSubtaskAt(assistantIndex, data_obj.task_id, "error", undefined, data_obj.error)
             } else if (data !== "end") {
               fullText += data
               setMessagesAt(assistantIndex, fullText)
@@ -155,6 +177,26 @@ export default function Chat() {
     const updated = [...store.messages]
     updated[index] = { ...updated[index], reasoning }
     store.setMessages(updated)
+  }
+
+  const setDecompositionAt = (index: number, decomposition: Decomposition) => {
+    const store = useChatStore.getState()
+    const updated = [...store.messages]
+    updated[index] = { ...updated[index], decomposition }
+    store.setMessages(updated)
+  }
+
+  const updateSubtaskAt = (index: number, taskId: string, status: Subtask["status"], answer?: string, error?: string) => {
+    const store = useChatStore.getState()
+    const updated = [...store.messages]
+    const msg = updated[index]
+    if (msg.decomposition) {
+      const subtasks = msg.decomposition.subtasks.map(s =>
+        s.id === taskId ? { ...s, status, ...(answer ? { answer } : {}), ...(error ? { error } : {}) } : s
+      )
+      updated[index] = { ...msg, decomposition: { ...msg.decomposition, subtasks } }
+      store.setMessages(updated)
+    }
   }
 
   const handleNewThread = () => {
@@ -262,7 +304,7 @@ export default function Chat() {
             <FilterBar userId={user.id} />
             <div className="flex-1 overflow-y-auto p-6">
               {error && (
-                <div className="mx-auto mb-4 max-w-2xl rounded-xl border border-[#f0d0c0] bg-[#fef9f6] px-4 py-3 text-sm text-[#b85c3a]">
+                <div className="mx-auto mb-4 max-w-4xl rounded-xl border border-[#f0d0c0] bg-[#fef9f6] px-4 py-3 text-sm text-[#b85c3a]">
                   <div className="flex items-center justify-between gap-2">
                     <span>{error}</span>
                     <button
@@ -279,7 +321,7 @@ export default function Chat() {
                   Send a message to start the conversation
                 </div>
               ) : (
-                <div className="mx-auto max-w-2xl space-y-6">
+                <div className="mx-auto max-w-4xl space-y-6">
                   {messages.map((msg, i) => (
                     <div
                       key={i}
@@ -287,41 +329,57 @@ export default function Chat() {
                         msg.role === "user" ? "justify-end" : "justify-start"
                       }`}
                     >
-                      <div
-                        className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                          msg.role === "user"
-                            ? "bg-gradient-to-br from-[#e8954c] to-[#d4704a] text-white shadow-sm"
-                            : "bg-white border border-[#f0e0c8] shadow-sm"
-                        }`}
-                        style={
-                          msg.role === "user"
-                            ? { borderRadius: "14px 14px 4px 14px" }
-                            : { borderRadius: "14px 14px 14px 6px" }
-                        }
-                      >
-                        {msg.content ? (
-                          msg.role === "assistant" ? (
-                            <MarkdownMessage content={msg.content} />
+                      <div className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"} max-w-[90%]`}>
+                        {/* Reasoning panel — ABOVE the message bubble */}
+                        {msg.role === "assistant" && msg.reasoning && msg.reasoning.length > 0 && (
+                          <ReasoningPanel reasoning={msg.reasoning} />
+                        )}
+
+                        {/* Decomposition card — ABOVE the message bubble */}
+                        {msg.role === "assistant" && msg.decomposition && (
+                          <div className="mb-3 w-full">
+                            <DecompositionCard decomposition={msg.decomposition} />
+                          </div>
+                        )}
+
+                        {/* Message bubble */}
+                        <div
+                          className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                            msg.role === "user"
+                              ? "bg-gradient-to-br from-[#e8954c] to-[#d4704a] text-white shadow-sm"
+                              : "bg-white border border-[#f0e0c8] shadow-sm"
+                          }`}
+                          style={
+                            msg.role === "user"
+                              ? { borderRadius: "14px 14px 4px 14px" }
+                              : { borderRadius: "14px 14px 14px 6px" }
+                          }
+                        >
+                          {msg.content ? (
+                            msg.role === "assistant" ? (
+                              <MarkdownMessage content={msg.content} />
+                            ) : (
+                              <span className="whitespace-pre-wrap">{msg.content}</span>
+                            )
                           ) : (
-                            <span className="whitespace-pre-wrap">{msg.content}</span>
-                          )
-                        ) : (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          )}
+                        </div>
+
+                        {/* Tool calls — BELOW the message bubble */}
+                        {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
+                          <div className="mt-2 space-y-1 w-full">
+                            {msg.toolCalls.map((tc) => (
+                              <ToolCallCard key={tc.id} toolCall={tc} />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Sources — BELOW everything */}
+                        {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                          <SourceList sources={msg.sources} />
                         )}
                       </div>
-                      {msg.role === "assistant" && msg.reasoning && msg.reasoning.length > 0 && (
-                        <ReasoningPanel reasoning={msg.reasoning} />
-                      )}
-                      {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (
-                        <div className="mt-2 space-y-1">
-                          {msg.toolCalls.map((tc) => (
-                            <ToolCallCard key={tc.id} toolCall={tc} />
-                          ))}
-                        </div>
-                      )}
-                      {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
-                        <SourceList sources={msg.sources} />
-                      )}
                     </div>
                   ))}
                   <div ref={messagesEndRef} />
@@ -330,7 +388,7 @@ export default function Chat() {
             </div>
 
             <div className="border-t border-[#e8e0d5] p-4">
-              <div className="mx-auto flex max-w-2xl gap-2">
+              <div className="mx-auto flex max-w-4xl gap-2">
                 <input
                   type="text"
                   value={input}

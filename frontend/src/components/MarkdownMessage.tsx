@@ -1,5 +1,9 @@
 import type { ReactNode } from "react"
 import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkMath from "remark-math"
+import rehypeKatex from "rehype-katex"
+import "katex/dist/katex.min.css"
 
 interface MarkdownMessageProps {
   content: string
@@ -13,9 +17,19 @@ interface CompProps {
 }
 
 export default function MarkdownMessage({ content, className = "" }: MarkdownMessageProps) {
+  // Pre-process: wrap bare LaTeX commands in $ delimiters so remark-math can render them.
+  // Matches patterns like \pi_\theta(a|s), \sum_{i=1}^n, \frac{1}{2}, etc.
+  // Only wraps if not already inside $...$ or $$...$$ delimiters.
+  const processedContent = content.replace(
+    /(?<!\$)(?<!\\)(\\[a-zA-Z]+(?:\{[^}]*\})*(?:_\{[^}]*\})*(?:\^\{[^}]*\})*(?:_[a-zA-Z0-9]+)*(?:\^[a-zA-Z0-9'+]+)*(?:\([^)]*\))*)(?!\$)/g,
+    (match) => `$${match}$`
+  )
+
   return (
     <div className={`prose prose-sm max-w-none ${className}`}>
       <ReactMarkdown
+        remarkPlugins={[remarkGfm, [remarkMath, { singleDollarTextMath: true }]]}
+        rehypePlugins={[rehypeKatex]}
         components={{
           pre: ({ children }: CompProps) => (
             <pre className="my-2 overflow-x-auto rounded-lg bg-[#f5f1ec] p-3 text-xs text-[#5c4a3a]">
@@ -38,21 +52,27 @@ export default function MarkdownMessage({ content, className = "" }: MarkdownMes
             )
           },
           table: ({ children }: CompProps) => (
-            <div className="my-2 overflow-x-auto">
-              <table className="min-w-full border-collapse border border-[#e8e0d5] text-xs">
+            <div className="my-2 overflow-x-auto rounded-lg border border-[#e8e0d5]">
+              <table className="min-w-full border-collapse text-xs">
                 {children}
               </table>
             </div>
           ),
+          thead: ({ children }: CompProps) => (
+            <thead className="border-b-2 border-[#e8e0d5]">{children}</thead>
+          ),
           th: ({ children }: CompProps) => (
-            <th className="border border-[#e8e0d5] bg-[#f5f1ec] px-3 py-1.5 text-left font-medium text-[#5c4a3a]">
+            <th className="bg-[#f5f1ec] px-3 py-2 text-left font-semibold text-[#3d3530] whitespace-nowrap">
               {children}
             </th>
           ),
           td: ({ children }: CompProps) => (
-            <td className="border border-[#e8e0d5] px-3 py-1.5 text-[#5c4a3a]">
+            <td className="border-t border-[#e8e0d5] px-3 py-2 text-[#5c4a3a]">
               {children}
             </td>
+          ),
+          tr: ({ children }: CompProps) => (
+            <tr className="even:bg-[#fdfaf7]">{children}</tr>
           ),
           h1: ({ children }: CompProps) => (
             <h1 className="mt-3 mb-1.5 text-base font-semibold text-[#3d3530]">{children}</h1>
@@ -91,7 +111,7 @@ export default function MarkdownMessage({ content, className = "" }: MarkdownMes
           hr: () => <hr className="my-3 border-[#e8e0d5]" />,
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   )

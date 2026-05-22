@@ -29,12 +29,27 @@ export interface ToolCall {
   task?: string
 }
 
+export interface Subtask {
+  id: string
+  description: string
+  depends_on: string[]
+  status: "pending" | "running" | "done" | "error"
+  answer?: string
+  error?: string
+}
+
+export interface Decomposition {
+  analysis: string
+  subtasks: Subtask[]
+}
+
 export interface Message {
   role: "user" | "assistant"
   content: string
   sources?: Source[]
   toolCalls?: ToolCall[]
   reasoning?: string[]
+  decomposition?: Decomposition
 }
 
 interface ChatStore {
@@ -56,6 +71,8 @@ interface ChatStore {
   setFilterFileIds: (ids: string[]) => void
   setFilterTopics: (topics: string[]) => void
   clearFilters: () => void
+  setDecompositionAt: (index: number, decomposition: Decomposition) => void
+  updateSubtaskStatus: (index: number, taskId: string, status: Subtask["status"], answer?: string, error?: string) => void
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
@@ -123,4 +140,24 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   setFilterFileIds: (ids) => set({ filterFileIds: ids }),
   setFilterTopics: (topics) => set({ filterTopics: topics }),
   clearFilters: () => set({ filterFileIds: [], filterTopics: [] }),
+
+  setDecompositionAt: (index: number, decomposition: Decomposition) => {
+    const store = get()
+    const updated = [...store.messages]
+    updated[index] = { ...updated[index], decomposition }
+    set({ messages: updated })
+  },
+
+  updateSubtaskStatus: (index: number, taskId: string, status: Subtask["status"], answer?: string, error?: string) => {
+    const store = get()
+    const updated = [...store.messages]
+    const msg = updated[index]
+    if (msg.decomposition) {
+      const subtasks = msg.decomposition.subtasks.map(s =>
+        s.id === taskId ? { ...s, status, ...(answer ? { answer } : {}), ...(error ? { error } : {}) } : s
+      )
+      updated[index] = { ...msg, decomposition: { ...msg.decomposition, subtasks } }
+      set({ messages: updated })
+    }
+  },
 }))

@@ -67,13 +67,35 @@ TOOLS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "decompose_and_execute",
+            "description": "For complex questions: decompose into subtasks, execute them via parallel sub-agents, and synthesize results. Use this for multi-faceted questions that require independent analysis of different aspects. Each sub-agent has document search, web search, and database access.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": "string",
+                        "description": "The original complex user question to decompose and solve.",
+                    },
+                    "file_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "UUIDs of the files for sub-agents to analyze.",
+                    },
+                },
+                "required": ["question", "file_ids"],
+            },
+        },
+    },
 ]
 
 
 # ---- Tool Executors ----
 
-def execute_search_web(query: str) -> str:
-    """Search the web using DuckDuckGo and return formatted results."""
+def execute_search_web(query: str, api_key: str = "") -> str:
+    """Search the web using Tavily Search API and return formatted results."""
     results = []
 
     # For weather queries, try wttr.in for structured weather data
@@ -136,18 +158,43 @@ def execute_search_web(query: str) -> str:
         except Exception as e:
             results.append(f"[Weather fetch failed: {e}]")
 
-    # Text search results via DuckDuckGo
-    try:
-        from ddgs import DDGS
-        ddg_results = []
-        with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=5):
-                body = r.get("body", "")
-                ddg_results.append(f"- {r['title']}\n  {r['href']}\n  {body}")
-        if ddg_results:
-            results.append("Web search results:\n\n" + "\n\n".join(ddg_results))
-    except Exception as e:
-        results.append(f"Web search failed: {e}")
+    # Web search via Tavily API
+    if api_key:
+        try:
+            body = json.dumps({
+                "api_key": api_key,
+                "query": query,
+                "search_depth": "basic",
+                "include_answer": True,
+                "max_results": 5,
+            }).encode("utf-8")
+
+            req = urllib.request.Request(
+                "https://api.tavily.com/search",
+                data=body,
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode())
+
+            # Tavily returns: answer (optional), results[], query
+            answer = data.get("answer", "")
+            if answer:
+                results.append(f"[Tavily Answer]\n{answer}")
+
+            tavily_results = data.get("results", [])
+            if tavily_results:
+                lines = ["Web search results:"]
+                for r in tavily_results[:5]:
+                    title = r.get("title", "")
+                    url = r.get("url", "")
+                    content = r.get("content", "")
+                    lines.append(f"\n- {title}\n  {url}\n  {content}")
+                results.append("\n".join(lines))
+        except Exception as e:
+            results.append(f"Tavily search failed: {e}")
+    else:
+        results.append("Web search unavailable: Tavily API key not configured. Please add your API key in Settings → Tools.")
 
     if results:
         return "\n\n".join(results)
@@ -277,18 +324,61 @@ def execute_delegate_to_subagent(task: str, file_ids: list[str]) -> str:
     return "".join(parts)
 
 
+def execute_decompose_and_execute(question: str, file_ids: list[str]) -> str:
+    """Decompose a complex question, execute sub-agents in parallel, and synthesize results."""
+    from src.routers.chunks import get_full_document_text
+    from src.openai_client import create_llm_client
+    from src.orchestrator import TaskOrchestrator
+
+    if not file_ids:
+        return "Error: No file IDs provided."
+
+    full_text, file_meta = get_full_document_text(file_ids)
+
+    llm_client = create_llm_client(api_key="", base_url="")
+    model = settings.model
+
+    orchestrator = TaskOrchestrator(
+        llm_client=llm_client,
+        model=model,
+        user_settings=None,
+        event_queue=None,
+    )
+
+    context_summary = (
+        f"{len(file_meta)} document(s) loaded: "
+        + ", ".join(meta.get("filename", "unknown") for meta in file_meta.values())
+    )
+
+    decomposition = orchestrator.decompose(question, context_summary)
+    results = orchestrator.execute_dag(decomposition["subtasks"], full_text, file_meta)
+
+    return json.dumps({
+        "analysis": decomposition["analysis"],
+        "subtask_results": results,
+    }, ensure_ascii=False)
+
+
 # ---- Tool Dispatcher ----
 
 TOOL_EXECUTORS = {
     "search_web": execute_search_web,
     "query_database": execute_query_database,
     "delegate_to_subagent": execute_delegate_to_subagent,
+    "decompose_and_execute": execute_decompose_and_execute,
 }
 
 
-def execute_tool(name: str, arguments: dict) -> str:
+def execute_tool(name: str, arguments: dict, user_settings: dict = None) -> str:
     """Execute a tool by name and return its result string."""
     executor = TOOL_EXECUTORS.get(name)
     if not executor:
         return f"Unknown tool: {name}"
+
+    # Inject Tavily API key into search_web calls: prefer user setting, fall back to config default
+    if name == "search_web":
+        if not arguments.get("api_key"):
+            user_key = (user_settings or {}).get("tavily_api_key", "")
+            arguments["api_key"] = user_key or settings.tavily_api_key
+
     return executor(**arguments)
