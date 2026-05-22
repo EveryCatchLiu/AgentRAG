@@ -193,7 +193,8 @@ export default function Chat() {
   const setReasoningAt = (index: number, reasoning: string[]) => {
     const store = useChatStore.getState()
     const updated = [...store.messages]
-    updated[index] = { ...updated[index], reasoning }
+    const existing = updated[index].reasoning || []
+    updated[index] = { ...updated[index], reasoning: [...existing, ...reasoning] }
     store.setMessages(updated)
   }
 

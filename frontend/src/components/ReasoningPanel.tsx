@@ -6,7 +6,7 @@ interface ReasoningPanelProps {
 }
 
 export default function ReasoningPanel({ reasoning }: ReasoningPanelProps) {
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(true)
 
   if (!reasoning || reasoning.length === 0) return null
 
@@ -29,7 +29,7 @@ export default function ReasoningPanel({ reasoning }: ReasoningPanelProps) {
               key={i}
               className="border-b border-dashed border-[#f0e0c8] px-3 py-2 text-[#9e8b78] whitespace-pre-wrap last:border-b-0"
             >
-              {step.length > 500 ? step.slice(0, 500) + "..." : step}
+              {step}
             </div>
           ))}
         </div>
