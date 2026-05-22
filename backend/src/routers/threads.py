@@ -224,6 +224,26 @@ def _execute_decomposition(args: dict, call_id: str, llm_client, model: str, use
     }
 
 
+def _download_chunk_image(url: str) -> str | None:
+    """Download an image from Supabase Storage and return as base64 data URI."""
+    import base64
+    from src.supabase_client import storage_bucket
+    try:
+        path = url.split("/storage/v1/object/public/documents/")[-1]
+        img_bytes = storage_bucket.download(path)
+        mime = "image/jpeg"
+        if img_bytes[:4] == b'\x89PNG':
+            mime = "image/png"
+        elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
+            mime = "image/webp"
+        elif img_bytes[:2] in (b'\xff\xd8',):
+            mime = "image/jpeg"
+        b64 = base64.b64encode(img_bytes).decode()
+        return f"data:{mime};base64,{b64}"
+    except Exception:
+        return None
+
+
 def _generate_thread_title(user_message: str, assistant_reply: str, thread_id: str, llm_client, model: str):
     """Generate a concise thread title from the first exchange and update the DB."""
     prompt = f"""Short title (3-8 words) for this conversation. Return ONLY the title:
@@ -515,7 +535,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         for img_url in chunk_images:
             print(f"[DEBUG] Downloading chunk image: {img_url[:80]}...", flush=True)
             try:
-                img_data = _download_image_for_llm(img_url)
+                img_data = _download_chunk_image(img_url)
                 if img_data:
                     print(f"[DEBUG] Chunk image downloaded OK, adding to content", flush=True)
                     parts.append({
@@ -562,26 +582,6 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     main_reasoning = []
     final_answer = None
     max_tool_rounds = 2
-
-    def _download_image_for_llm(url: str) -> str | None:
-        """Download an image from Supabase and return as base64 data URI."""
-        import base64
-        from src.supabase_client import storage_bucket
-        try:
-            path = url.split("/storage/v1/object/public/documents/")[-1]
-            img_bytes = storage_bucket.download(path)
-            mime = "image/jpeg"
-            if img_bytes[:4] == b'\x89PNG':
-                mime = "image/png"
-            elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
-                mime = "image/webp"
-            elif img_bytes[:2] in (b'\xff\xd8',):
-                mime = "image/jpeg"
-            b64 = base64.b64encode(img_bytes).decode()
-            return f"data:{mime};base64,{b64}"
-        except Exception as e:
-            print(f"[DEBUG] Image download failed: {e}", flush=True)
-            return None
 
     def _push(event_type: str, data):
         """Push an event to the queue."""
