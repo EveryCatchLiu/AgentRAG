@@ -13,6 +13,7 @@ export default function SettingsPage() {
     llm_api_key: "",
     llm_base_url: "",
     llm_model: "",
+    llm_multimodal_model: "",
     llm_title_model: "",
     llm_system_prompt: "",
   })
@@ -20,7 +21,7 @@ export default function SettingsPage() {
   const [embedForm, setEmbedForm] = useState({
     embedding_api_key: "",
     embedding_base_url: "",
-    embedding_model: "text-embedding-v3",
+    embedding_model: "qwen3-vl-embedding",
     chunk_size: 1000,
     chunk_overlap: 200,
   })
@@ -47,6 +48,7 @@ export default function SettingsPage() {
         llm_api_key: data.llm_api_key || "",
         llm_base_url: data.llm_base_url || "",
         llm_model: data.llm_model || "",
+        llm_multimodal_model: data.llm_multimodal_model || "",
         llm_title_model: data.llm_title_model || "",
         llm_system_prompt: data.llm_system_prompt || "",
       })
@@ -231,20 +233,35 @@ export default function SettingsPage() {
                   type="text"
                   value={llmForm.llm_model}
                   onChange={(e) => setLlmForm({ ...llmForm, llm_model: e.target.value })}
-                  placeholder="qwen-plus"
+                  placeholder="deepseek-v4-flash"
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-sm font-medium">Title Model</label>
+                <label className="mb-1.5 block text-sm font-medium">Multimodal Model</label>
                 <input
                   type="text"
-                  value={llmForm.llm_title_model}
-                  onChange={(e) => setLlmForm({ ...llmForm, llm_title_model: e.target.value })}
-                  placeholder="qwen-turbo"
+                  value={llmForm.llm_multimodal_model}
+                  onChange={(e) => setLlmForm({ ...llmForm, llm_multimodal_model: e.target.value })}
+                  placeholder="qwen3-vl"
                   className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Auto-selected when images/videos are attached
+                </p>
               </div>
+            </div>
+
+            {/* Title Model */}
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Title Model</label>
+              <input
+                type="text"
+                value={llmForm.llm_title_model}
+                onChange={(e) => setLlmForm({ ...llmForm, llm_title_model: e.target.value })}
+                placeholder="qwen-turbo"
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
             </div>
 
             {/* System Prompt */}
