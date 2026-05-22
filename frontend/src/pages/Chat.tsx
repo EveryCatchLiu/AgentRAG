@@ -154,7 +154,6 @@ export default function Chat() {
         }
       }
 
-      loadMessages(currentThread.id, user.id)
     } catch (err) {
       console.error("Failed to send message:", err)
     }
