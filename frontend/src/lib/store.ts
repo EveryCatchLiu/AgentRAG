@@ -9,12 +9,20 @@ export interface Thread {
   updated_at: string
 }
 
+export interface MediaAttachment {
+  type: "image" | "video"
+  data: string  // base64 for images, URL for videos
+  previewUrl?: string  // object URL for local preview
+}
+
 export interface Source {
   content: string
   similarity: number
   filename: string
   chunk_index: number
   file_id: string
+  media_type?: string | null
+  media_url?: string | null
 }
 
 export interface ToolCall {
@@ -46,6 +54,7 @@ export interface Decomposition {
 export interface Message {
   role: "user" | "assistant"
   content: string
+  media?: MediaAttachment[]
   sources?: Source[]
   toolCalls?: ToolCall[]
   reasoning?: string[]
