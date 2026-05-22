@@ -567,8 +567,11 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             elif img_bytes[:2] in (b'\xff\xd8',):
                 mime = "image/jpeg"
             b64 = base64.b64encode(img_bytes).decode()
-            return f"data:{mime};base64,{b64}"
-        except Exception:
+            result = f"data:{mime};base64,{b64}"
+            print(f"[DEBUG] Downloaded image: {len(img_bytes)} bytes -> {len(result)} chars", flush=True)
+            return result
+        except Exception as e:
+            print(f"[DEBUG] Image download failed: {e}", flush=True)
             return None
 
     def run_agent_loop():
@@ -579,7 +582,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         tools_supported = True
         current_model, platform = resolve_model(messages, user_settings)
         active_client = bailian_llm_client if platform == "bailian" else llm_client
-        print(f"[DEBUG] model={current_model} platform={platform}", flush=True)
+        print(f"[DEBUG] model={current_model} platform={platform} user_content is list={isinstance(user_content, list)} num_images={len([p for p in (user_content if isinstance(user_content,list) else []) if p.get('type')=='image_url'])}", flush=True)
 
         for _ in range(max_tool_rounds):
             try:
