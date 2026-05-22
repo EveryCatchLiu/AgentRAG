@@ -11,8 +11,6 @@ const modules = [
     subtitle: "Document Q&A",
     desc: "基于 RAG 的智能问答，上传文档后进行自然语言提问，获取精准、有来源引用的回答。",
     link: "/chat",
-    gradient: "from-amber-500 to-orange-600",
-    shadow: "shadow-amber-500/20",
   },
   {
     icon: Eye,
@@ -20,8 +18,6 @@ const modules = [
     subtitle: "Visual Understanding",
     desc: "上传图片或视频，结合多模态 Embedding 检索与 qwen3-vl 视觉模型进行深度分析。",
     link: "/chat",
-    gradient: "from-violet-500 to-purple-600",
-    shadow: "shadow-violet-500/20",
   },
   {
     icon: Microscope,
@@ -29,8 +25,6 @@ const modules = [
     subtitle: "Deep Research",
     desc: "多 Agent 协作拆解复杂问题，并行执行子任务后汇总，适合多文档对比与综合分析。",
     link: "/chat",
-    gradient: "from-emerald-500 to-teal-600",
-    shadow: "shadow-emerald-500/20",
   },
   {
     icon: Search,
@@ -38,8 +32,6 @@ const modules = [
     subtitle: "Knowledge Search",
     desc: "向量 + 关键词混合检索，RRF 融合排序，Cohere/LLM 重排序，支持多维度过滤。",
     link: "/chat",
-    gradient: "from-sky-500 to-blue-600",
-    shadow: "shadow-sky-500/20",
   },
   {
     icon: FolderOpen,
@@ -47,8 +39,6 @@ const modules = [
     subtitle: "Knowledge Base",
     desc: "上传和管理 PDF、图片、Word 等文档，Mistral OCR 自动处理扫描件，批量管理。",
     link: "/import",
-    gradient: "from-rose-500 to-pink-600",
-    shadow: "shadow-rose-500/20",
   },
   {
     icon: Settings,
@@ -56,8 +46,6 @@ const modules = [
     subtitle: "Settings",
     desc: "配置 LLM 模型与平台、Embedding 模型、检索策略、Reranker 及第三方 API Key。",
     link: "/settings",
-    gradient: "from-slate-500 to-zinc-600",
-    shadow: "shadow-slate-500/20",
   },
 ]
 
@@ -120,7 +108,6 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
 
       const particles = particlesRef.current
       for (const p of particles) {
-        // Subtle mouse attraction
         const dx = mx - p.x
         const dy = my - p.y
         const dist = Math.sqrt(dx * dx + dy * dy)
@@ -129,27 +116,20 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
           p.vx += (dx / dist) * force
           p.vy += (dy / dist) * force
         }
-
-        // Damping
         p.vx *= 0.999
         p.vy *= 0.999
-
         p.x += p.vx
         p.y += p.vy
-
-        // Wrap around
         if (p.x < -10) p.x = w + 10
         if (p.x > w + 10) p.x = -10
         if (p.y < -10) p.y = h + 10
         if (p.y > h + 10) p.y = -10
-
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
         ctx.fillStyle = `rgba(232, 149, 76, ${p.opacity})`
         ctx.fill()
       }
 
-      // Draw connections between nearby particles
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
@@ -180,14 +160,12 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
 
   return (
     <div className="relative flex-1 overflow-hidden bg-[#faf9f7]">
-      {/* Particle canvas */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
         style={{ opacity: 0.7 }}
       />
 
-      {/* Gradient orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
           className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-[0.08]"
@@ -197,16 +175,16 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
           }}
         />
         <div
-          className="absolute top-1/2 -right-24 w-[30rem] h-[30rem] rounded-full opacity-[0.06]"
+          className="absolute top-1/2 -right-24 w-[30rem] h-[30rem] rounded-full opacity-[0.05]"
           style={{
-            background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)",
+            background: "radial-gradient(circle, #d4704a 0%, transparent 70%)",
             animation: "float 20s ease-in-out infinite 3s",
           }}
         />
         <div
-          className="absolute -bottom-28 left-1/3 w-80 h-80 rounded-full opacity-[0.06]"
+          className="absolute -bottom-28 left-1/3 w-80 h-80 rounded-full opacity-[0.05]"
           style={{
-            background: "radial-gradient(circle, #10b981 0%, transparent 70%)",
+            background: "radial-gradient(circle, #e8954c 0%, transparent 70%)",
             animation: "float 18s ease-in-out infinite 6s",
           }}
         />
@@ -215,7 +193,7 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-full px-6 py-10">
         {/* Hero */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] mb-5 shadow-lg shadow-[#e8954c]/25">
             <img src="/favicon.svg" alt="AgentRAG" className="w-9 h-9 brightness-0 invert" />
           </div>
@@ -233,32 +211,29 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
         </div>
 
         {/* Module grid — 3x2 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-4xl w-full">
           {modules.map((m) => (
             <Link
               key={m.title}
               to={m.link}
-              className={`group relative rounded-2xl border border-[#e8e0d5] bg-white/80 backdrop-blur-sm p-5 hover:shadow-lg ${m.shadow} transition-all duration-300 hover:-translate-y-1 hover:border-[#d0c8b8]`}
+              className="group relative rounded-2xl border border-[#e8e0d5] bg-white/90 backdrop-blur-sm p-6 hover:shadow-lg hover:border-[#d4c4b0] transition-all duration-300 hover:-translate-y-1"
             >
-              {/* Gradient dot */}
-              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br ${m.gradient} mb-3 shadow-sm`}>
+              <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-gradient-to-br from-[#e8954c] to-[#d4704a] mb-4 shadow-sm">
                 <m.icon className="h-5 w-5 text-white" />
               </div>
-              <h3 className="text-sm font-semibold text-[#3d3530] mb-0.5">
+              <h3 className="text-base font-semibold text-[#3d3530] mb-1">
                 {m.title}
-                <span className="ml-2 text-[10px] font-normal text-[#b8a48e] uppercase tracking-wide">{m.subtitle}</span>
+                <span className="ml-2 text-[11px] font-normal text-[#b8a48e] uppercase tracking-wide">{m.subtitle}</span>
               </h3>
-              <p className="text-xs text-[#9e8b78] leading-relaxed">{m.desc}</p>
-              {/* Hover arrow */}
-              <div className="absolute bottom-4 right-4 w-6 h-6 rounded-full bg-[#f5f1ec] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <svg className="h-3 w-3 text-[#8b5e3c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
+              <p className="text-sm text-[#8b7a68] leading-relaxed">{m.desc}</p>
+              <div className="absolute bottom-5 right-5 w-7 h-7 rounded-full bg-[#f5f1ec] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <svg className="h-3.5 w-3.5 text-[#8b5e3c]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
               </div>
             </Link>
           ))}
         </div>
 
-        {/* Footer hint */}
-        <p className="mt-6 text-[10px] text-[#c4b8a8]">
+        <p className="mt-8 text-[11px] text-[#c4b8a8]">
           点击任意模块进入对应功能界面 · 支持 PDF / Word / 图片 / 视频等多种格式
         </p>
       </div>
