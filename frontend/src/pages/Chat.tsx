@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../contexts/AuthContext"
-import { useChatStore, type Message, type Source, type ToolCall, type Decomposition, type Subtask } from "../lib/store"
-import { Plus, Trash2, Loader2, FolderInput, Settings } from "lucide-react"
+import { useChatStore, type Message, type Source, type ToolCall, type Decomposition, type Subtask, type MediaAttachment } from "../lib/store"
+import { Plus, Trash2, Loader2, FolderInput, Settings, Image, X } from "lucide-react"
 import SourceList from "../components/SourceCard"
 import ToolCallCard from "../components/ToolCallCard"
 import ReasoningPanel from "../components/ReasoningPanel"
@@ -29,6 +29,8 @@ export default function Chat() {
     setStreaming,
   } = useChatStore()
   const [input, setInput] = useState("")
+  const [mediaAttachments, setMediaAttachments] = useState<MediaAttachment[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -49,9 +51,14 @@ export default function Chat() {
   const handleSend = async () => {
     if (!input.trim() || !currentThread || !user) return
 
-    const userMessage: Message = { role: "user", content: input.trim() }
+    const userMessage: Message = {
+      role: "user",
+      content: input.trim(),
+      media: mediaAttachments.length > 0 ? [...mediaAttachments] : undefined,
+    }
     addMessage(userMessage)
     setInput("")
+    setMediaAttachments([])
     setError(null)
     setStreaming(true)
 
@@ -67,6 +74,7 @@ export default function Chat() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             content: userMessage.content,
+            media: userMessage.media?.map((m) => ({ type: m.type, data: m.data })),
             filter_file_ids: filterFileIds.length > 0 ? filterFileIds : undefined,
             filter_topics: filterTopics.length > 0 ? filterTopics : undefined,
           }),
@@ -207,6 +215,40 @@ export default function Chat() {
   const handleDeleteThread = async (threadId: string) => {
     if (!user) return
     await deleteThread(user.id, threadId)
+  }
+
+  const handleMediaSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) return
+
+    Array.from(files).forEach((file) => {
+      const isVideo = file.type.startsWith("video/")
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(",")[1]
+        setMediaAttachments((prev) => [
+          ...prev,
+          {
+            type: isVideo ? "video" : "image",
+            data: base64,
+            previewUrl: URL.createObjectURL(file),
+          },
+        ])
+      }
+      reader.readAsDataURL(file)
+    })
+    e.target.value = ""
+  }
+
+  const removeMedia = (index: number) => {
+    setMediaAttachments((prev) => {
+      const updated = [...prev]
+      if (updated[index].previewUrl) {
+        URL.revokeObjectURL(updated[index].previewUrl!)
+      }
+      updated.splice(index, 1)
+      return updated
+    })
   }
 
   return (
@@ -360,6 +402,28 @@ export default function Chat() {
                               <MarkdownMessage content={msg.content} />
                             ) : (
                               <span className="whitespace-pre-wrap">{msg.content}</span>
+                              {/* Show media in user messages */}
+                              {msg.media && msg.media.length > 0 && (
+                                <div className="mt-2 flex gap-2 flex-wrap">
+                                  {msg.media.map((m, i) => (
+                                    <div key={i}>
+                                      {m.type === "image" ? (
+                                        <img
+                                          src={m.previewUrl || `data:image/jpeg;base64,${m.data}`}
+                                          alt="Attached"
+                                          className="max-h-48 max-w-[300px] object-cover rounded-lg border border-white/20"
+                                        />
+                                      ) : (
+                                        <video
+                                          src={m.previewUrl || m.data}
+                                          controls
+                                          className="max-h-48 max-w-[300px] rounded-lg border border-white/20"
+                                        />
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             )
                           ) : (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -387,6 +451,35 @@ export default function Chat() {
               )}
             </div>
 
+            {/* Media previews */}
+            {mediaAttachments.length > 0 && (
+              <div className="mx-auto flex max-w-4xl gap-2 px-4 mb-2 flex-wrap">
+                {mediaAttachments.map((m, i) => (
+                  <div key={i} className="relative group">
+                    {m.type === "image" ? (
+                      <img
+                        src={m.previewUrl}
+                        alt="Preview"
+                        className="h-16 w-16 object-cover rounded-lg border border-[#e8e0d5]"
+                      />
+                    ) : (
+                      <video
+                        src={m.previewUrl}
+                        className="h-16 w-16 object-cover rounded-lg border border-[#e8e0d5]"
+                        muted
+                      />
+                    )}
+                    <button
+                      onClick={() => removeMedia(i)}
+                      className="absolute -top-1.5 -right-1.5 rounded-full bg-[#d4704a] p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="border-t border-[#e8e0d5] p-4">
               <div className="mx-auto flex max-w-4xl gap-2">
                 <input
@@ -403,6 +496,22 @@ export default function Chat() {
                   className="flex-1 rounded-2xl border border-[#e8e0d5] bg-white px-4 py-2.5 text-sm text-[#5c4a3a] placeholder-[#b8a48e] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#e8954c]/30 focus:border-[#e8954c]/40"
                   disabled={streaming}
                 />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleMediaSelect}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={streaming}
+                  className="rounded-2xl border border-[#e8e0d5] bg-white px-3 py-2.5 text-[#9e8b78] hover:bg-[#fefaf5] hover:text-[#8b5e3c] disabled:opacity-50 transition-colors"
+                  title="Attach image or video"
+                >
+                  <Image className="h-5 w-5" />
+                </button>
                 <button
                   onClick={handleSend}
                   disabled={!input.trim() || streaming}
