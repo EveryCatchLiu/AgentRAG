@@ -64,7 +64,8 @@ export default function Chat() {
 
     const assistantMessage: Message = { role: "assistant", content: "" }
     addMessage(assistantMessage)
-    const assistantIndex = messages.length - 1
+    // Use getState() for real-time length, not closure's stale messages
+    const assistantIndex = useChatStore.getState().messages.length - 1
 
     try {
       const response = await fetch(
