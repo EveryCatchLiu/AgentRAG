@@ -401,29 +401,30 @@ export default function Chat() {
                             msg.role === "assistant" ? (
                               <MarkdownMessage content={msg.content} />
                             ) : (
-                              <span className="whitespace-pre-wrap">{msg.content}</span>
-                              {/* Show media in user messages */}
-                              {msg.media && msg.media.length > 0 && (
-                                <div className="mt-2 flex gap-2 flex-wrap">
-                                  {msg.media.map((m, i) => (
-                                    <div key={i}>
-                                      {m.type === "image" ? (
-                                        <img
-                                          src={m.previewUrl || `data:image/jpeg;base64,${m.data}`}
-                                          alt="Attached"
-                                          className="max-h-48 max-w-[300px] object-cover rounded-lg border border-white/20"
-                                        />
-                                      ) : (
-                                        <video
-                                          src={m.previewUrl || m.data}
-                                          controls
-                                          className="max-h-48 max-w-[300px] rounded-lg border border-white/20"
-                                        />
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
+                              <>
+                                <span className="whitespace-pre-wrap">{msg.content}</span>
+                                {msg.media && msg.media.length > 0 && (
+                                  <div className="mt-2 flex gap-2 flex-wrap">
+                                    {msg.media.map((m, i) => (
+                                      <div key={i}>
+                                        {m.type === "image" ? (
+                                          <img
+                                            src={m.previewUrl || `data:image/jpeg;base64,${m.data}`}
+                                            alt="Attached"
+                                            className="max-h-48 max-w-[300px] object-cover rounded-lg border border-white/20"
+                                          />
+                                        ) : (
+                                          <video
+                                            src={m.previewUrl || m.data}
+                                            controls
+                                            className="max-h-48 max-w-[300px] rounded-lg border border-white/20"
+                                          />
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
                             )
                           ) : (
                             <Loader2 className="h-4 w-4 animate-spin" />
