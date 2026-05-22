@@ -82,7 +82,10 @@ export default function Chat() {
       )
 
       const reader = response.body?.getReader()
-      if (!reader) return
+      if (!reader) {
+        setStreaming(false)
+        return
+      }
 
       const decoder = new TextDecoder()
       let fullText = ""
@@ -105,7 +108,11 @@ export default function Chat() {
           } else if (line.startsWith("data: ")) {
             const data = line.slice(6)
 
-            if (currentEvent === "sources") {
+            // Handle done event
+            if (currentEvent === "done") {
+              reader.cancel()
+              break
+            } else if (currentEvent === "sources") {
               const sources: Source[] = JSON.parse(data)
               setSourcesAt(assistantIndex, sources)
             } else if (currentEvent === "retrieved_images") {
