@@ -90,8 +90,15 @@ export default function Chat() {
       const decoder = new TextDecoder()
       let fullText = ""
       let currentEvent = ""
+      let streamDone = false
 
-      while (true) {
+      // Safety timeout: stop streaming after 120s no matter what
+      const timeout = setTimeout(() => {
+        streamDone = true
+        try { reader.cancel() } catch (_) { /* ignore */ }
+      }, 120000)
+
+      while (!streamDone) {
         const { done, value } = await reader.read()
         if (done) break
 
@@ -108,9 +115,9 @@ export default function Chat() {
           } else if (line.startsWith("data: ")) {
             const data = line.slice(6)
 
-            // Handle done event
+            // Handle done event — stop the outer while loop
             if (currentEvent === "done") {
-              reader.cancel()
+              streamDone = true
               break
             } else if (currentEvent === "sources") {
               const sources: Source[] = JSON.parse(data)
@@ -165,6 +172,7 @@ export default function Chat() {
       console.error("Failed to send message:", err)
     }
 
+    clearTimeout(timeout)
     setStreaming(false)
   }
 

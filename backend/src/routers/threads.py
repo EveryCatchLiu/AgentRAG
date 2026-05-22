@@ -832,7 +832,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
+            "Connection": "close",
             "X-Accel-Buffering": "no",
         },
     )
