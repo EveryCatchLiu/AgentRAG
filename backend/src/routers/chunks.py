@@ -10,6 +10,8 @@ from src.config import settings
 from src.openai_client import get_multimodal_embedding
 from src.supabase_client import supabase, storage_bucket
 
+IMAGE_EXTENSIONS = frozenset({"png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"})
+
 
 def get_full_document_text(file_ids: list[str]) -> tuple[str, dict]:
     """Load all chunks for given file_ids, ordered by chunk_index.
@@ -142,7 +144,7 @@ def extract_text(content: bytes, filename: str, user_settings: dict = None) -> s
     ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
 
     # Image formats — always use Mistral OCR
-    if ext in ("png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"):
+    if ext in IMAGE_EXTENSIONS:
         try:
             from src.openai_client import ocr_with_mistral
             api_key = (user_settings or {}).get("mistral_api_key", "")
@@ -311,23 +313,29 @@ def process_file(file_id: str, storage_path: str, user_settings: dict = None):
 
         chunks = split_text(text, chunk_size=chunk_size, overlap=chunk_overlap)
 
+        # Hoist image encoding: encode once, reuse across all chunks
+        ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+        img_b64 = None
+        mime_type = None
+        emb_api_key = (user_settings or {}).get("embedding_api_key", "")
+        if ext in IMAGE_EXTENSIONS and isinstance(file_content, bytes):
+            try:
+                img_b64 = base64.b64encode(file_content).decode("utf-8")
+                mime_type = f"image/{'jpeg' if ext in ('jpg', 'jpeg') else ext}"
+            except Exception:
+                pass
+
         for i, chunk_text in enumerate(chunks):
             try:
                 contents = [{"text": chunk_text}]
                 media_type = None
                 media_url = None
-                ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
-                if ext in ("png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"):
+                if img_b64:
                     media_type = "image"
                     media_url = supabase.storage.from_("documents").get_public_url(storage_path)
-                    try:
-                        img_b64 = base64.b64encode(file_content).decode("utf-8")
-                        mime = f"image/{'jpeg' if ext in ('jpg', 'jpeg') else ext}"
-                        contents.append({"image": f"data:{mime};base64,{img_b64}"})
-                    except Exception:
-                        pass
+                    contents.append({"image": f"data:{mime_type};base64,{img_b64}"})
 
-                embedding = get_multimodal_embedding(contents, api_key="")
+                embedding = get_multimodal_embedding(contents, api_key=emb_api_key)
                 supabase.table("chunks").insert({
                     "id": str(uuid.uuid4()),
                     "file_id": file_id,
