@@ -108,6 +108,9 @@ export default function Chat() {
             if (currentEvent === "sources") {
               const sources: Source[] = JSON.parse(data)
               setSourcesAt(assistantIndex, sources)
+            } else if (currentEvent === "retrieved_images") {
+              const images: string[] = JSON.parse(data)
+              setRetrievedImagesAt(assistantIndex, images)
             } else if (currentEvent === "tool_calls") {
               const toolCalls: ToolCall[] = JSON.parse(data)
               setToolCallsAt(assistantIndex, toolCalls)
@@ -170,6 +173,13 @@ export default function Chat() {
     const store = useChatStore.getState()
     const updated = [...store.messages]
     updated[index] = { ...updated[index], sources }
+    store.setMessages(updated)
+  }
+
+  const setRetrievedImagesAt = (index: number, images: string[]) => {
+    const store = useChatStore.getState()
+    const updated = [...store.messages]
+    updated[index] = { ...updated[index], retrievedImages: images }
     store.setMessages(updated)
   }
 
@@ -430,6 +440,29 @@ export default function Chat() {
                             <Loader2 className="h-4 w-4 animate-spin" />
                           )}
                         </div>
+
+                        {/* Retrieved images from vector DB */}
+                        {msg.role === "assistant" && msg.retrievedImages && msg.retrievedImages.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs font-medium text-[#b8a48e]">
+                              检索到的图片 ({msg.retrievedImages.length})
+                            </p>
+                            <div className="flex gap-2 flex-wrap">
+                              {msg.retrievedImages.map((img, i) => (
+                                <img
+                                  key={i}
+                                  src={img}
+                                  alt={`Retrieved ${i + 1}`}
+                                  className="max-h-48 max-w-[300px] object-cover rounded-lg border border-[#f0e0c8] cursor-pointer hover:opacity-90 transition-opacity"
+                                  onClick={() => {
+                                    // Open in a new tab for full size
+                                    window.open(img, "_blank")
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Tool calls — BELOW the message bubble */}
                         {msg.role === "assistant" && msg.toolCalls && msg.toolCalls.length > 0 && (

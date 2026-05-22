@@ -55,6 +55,7 @@ export interface Message {
   role: "user" | "assistant"
   content: string
   media?: MediaAttachment[]
+  retrievedImages?: string[]  // base64 data URIs from vector DB
   sources?: Source[]
   toolCalls?: ToolCall[]
   reasoning?: string[]
