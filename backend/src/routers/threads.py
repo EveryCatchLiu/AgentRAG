@@ -95,7 +95,7 @@ def _execute_delegation(args: dict, call_id: str, llm_client, model: str) -> dic
             "result": "Error: No file IDs provided.", "status": "error",
         }
 
-    full_text, file_meta = get_full_document_text(file_ids)
+    full_text, file_meta, media_map = get_full_document_text(file_ids)
     if not full_text.strip():
         return {
             "id": call_id, "name": "delegate_to_subagent",
@@ -103,9 +103,16 @@ def _execute_delegation(args: dict, call_id: str, llm_client, model: str) -> dic
             "result": f"Error: Documents not found for {file_ids}", "status": "error",
         }
 
+    # Collect chunk images
+    chunk_images = []
+    for _fid, media in media_map.items():
+        if media.get("type") == "image" and media.get("url"):
+            chunk_images.append(media["url"])
+
     executor = SubAgentExecutor(
         llm_client=llm_client, model=model,
         task=task, full_text=full_text, file_metadata=file_meta,
+        chunk_images=chunk_images,
     )
     result = executor.run()
 
@@ -584,10 +591,10 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                         args_json = json.dumps(args, ensure_ascii=False)
 
                         if name == "decompose_and_execute":
-                            tc_record = _execute_decomposition(args, call_id, llm_client, model, user_settings, event_queue)
+                            tc_record = _execute_decomposition(args, call_id, active_client, current_model, user_settings, event_queue)
                             tool_results.append({"role": "tool", "tool_call_id": call_id, "content": tc_record["result"][:2000]})
                         elif name == "delegate_to_subagent":
-                            tc_record = _execute_delegation(args, call_id, llm_client, model)
+                            tc_record = _execute_delegation(args, call_id, active_client, current_model)
                             tool_results.append({"role": "tool", "tool_call_id": call_id, "content": tc_record["result"][:2000]})
                         else:
                             result = execute_tool(name, args, user_settings)
@@ -627,10 +634,10 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                     args = {}
 
                 if tc.function.name == "decompose_and_execute":
-                    tc_record = _execute_decomposition(args, tc.id, llm_client, model, user_settings, event_queue)
+                    tc_record = _execute_decomposition(args, tc.id, active_client, current_model, user_settings, event_queue)
                     tool_results.append({"role": "tool", "tool_call_id": tc.id, "content": tc_record["result"][:2000]})
                 elif tc.function.name == "delegate_to_subagent":
-                    tc_record = _execute_delegation(args, tc.id, llm_client, model)
+                    tc_record = _execute_delegation(args, tc.id, active_client, current_model)
                     tool_results.append({"role": "tool", "tool_call_id": tc.id, "content": tc_record["result"][:2000]})
                 else:
                     result = execute_tool(tc.function.name, args, user_settings)

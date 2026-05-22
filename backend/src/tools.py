@@ -293,20 +293,30 @@ def _handle_common_queries(question: str) -> str:
 def execute_delegate_to_subagent(task: str, file_ids: list[str]) -> str:
     """Spawn a sub-agent to analyze full document(s)."""
     from src.routers.chunks import get_full_document_text
-    from src.openai_client import create_llm_client
+    from src.openai_client import create_llm_client, create_bailian_client
     from src.agent import SubAgentExecutor
 
     if not file_ids:
         return "Error: No file IDs provided to sub-agent."
 
-    # Load full document text
-    full_text, file_meta = get_full_document_text(file_ids)
+    # Load full document text + media map
+    full_text, file_meta, media_map = get_full_document_text(file_ids)
     if not full_text.strip():
         return f"Error: Document(s) not found or contain no text for file_ids: {file_ids}"
 
-    # Create sub-agent LLM client
-    llm_client = create_llm_client(api_key="", base_url="")
-    model = settings.model
+    # Collect image URLs from the document chunks
+    chunk_images = []
+    for fid, media in media_map.items():
+        if media.get("type") == "image" and media.get("url"):
+            chunk_images.append(media["url"])
+
+    # Use multimodal client if document has images, otherwise DeepSeek
+    if chunk_images:
+        llm_client = create_bailian_client()
+        model = settings.multimodal_model
+    else:
+        llm_client = create_llm_client(api_key="", base_url="")
+        model = settings.model
 
     executor = SubAgentExecutor(
         llm_client=llm_client,
@@ -314,6 +324,7 @@ def execute_delegate_to_subagent(task: str, file_ids: list[str]) -> str:
         task=task,
         full_text=full_text,
         file_metadata=file_meta,
+        chunk_images=chunk_images,
     )
     result = executor.run()
 
@@ -327,16 +338,25 @@ def execute_delegate_to_subagent(task: str, file_ids: list[str]) -> str:
 def execute_decompose_and_execute(question: str, file_ids: list[str]) -> str:
     """Decompose a complex question, execute sub-agents in parallel, and synthesize results."""
     from src.routers.chunks import get_full_document_text
-    from src.openai_client import create_llm_client
+    from src.openai_client import create_llm_client, create_bailian_client
     from src.orchestrator import TaskOrchestrator
 
     if not file_ids:
         return "Error: No file IDs provided."
 
-    full_text, file_meta = get_full_document_text(file_ids)
+    full_text, file_meta, media_map = get_full_document_text(file_ids)
 
-    llm_client = create_llm_client(api_key="", base_url="")
-    model = settings.model
+    # Use multimodal client if document has images
+    has_images = any(
+        m.get("type") == "image" and m.get("url")
+        for m in media_map.values()
+    )
+    if has_images:
+        llm_client = create_bailian_client()
+        model = settings.multimodal_model
+    else:
+        llm_client = create_llm_client(api_key="", base_url="")
+        model = settings.model
 
     orchestrator = TaskOrchestrator(
         llm_client=llm_client,

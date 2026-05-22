@@ -159,6 +159,7 @@ class SubAgentExecutor:
         full_text: str,
         file_metadata: dict,
         tavily_api_key: str = "",
+        chunk_images: list[str] | None = None,
     ):
         self.llm_client = llm_client
         self.model = model
@@ -166,6 +167,7 @@ class SubAgentExecutor:
         self.full_text = full_text
         self.file_metadata = file_metadata
         self.tavily_api_key = tavily_api_key
+        self.chunk_images = chunk_images or []
         self.tool_calls: list[ToolCallRecord] = []
         self.reasoning: list[str] = []
         self.max_rounds = 2
@@ -199,8 +201,19 @@ class SubAgentExecutor:
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": self.task},
         ]
+
+        # Build user message - include images if available (for multimodal models)
+        if self.chunk_images:
+            user_parts: list[dict] = [{"type": "text", "text": self.task}]
+            for img_url in self.chunk_images:
+                user_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_url},
+                })
+            messages.append({"role": "user", "content": user_parts})
+        else:
+            messages.append({"role": "user", "content": self.task})
 
         final_answer = None
 

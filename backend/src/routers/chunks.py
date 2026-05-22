@@ -13,17 +13,18 @@ from src.supabase_client import supabase, storage_bucket
 IMAGE_EXTENSIONS = frozenset({"png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"})
 
 
-def get_full_document_text(file_ids: list[str]) -> tuple[str, dict]:
+def get_full_document_text(file_ids: list[str]) -> tuple[str, dict, dict]:
     """Load all chunks for given file_ids, ordered by chunk_index.
-    Returns (concatenated_full_text, file_metadata_dict keyed by file_id).
+    Returns (concatenated_full_text, file_metadata_dict keyed by file_id, media_map keyed by file_id).
     """
     all_chunks = []
     file_meta = {}
+    media_map: dict[str, dict] = {}  # file_id -> {"type": str, "url": str}
 
     for fid in file_ids:
         result = (
             supabase.table("chunks")
-            .select("content, chunk_index, files!inner(filename, metadata)")
+            .select("content, chunk_index, media_type, media_url, files!inner(filename, metadata)")
             .eq("file_id", fid)
             .order("chunk_index")
             .execute()
@@ -34,11 +35,17 @@ def get_full_document_text(file_ids: list[str]) -> tuple[str, dict]:
                 "filename": file_info.get("filename", "unknown"),
                 "metadata": file_info.get("metadata", {}),
             }
+            # Collect media info from first chunk that has it
+            for chunk in result.data:
+                mt = chunk.get("media_type")
+                mu = chunk.get("media_url")
+                if mt and mu and fid not in media_map:
+                    media_map[fid] = {"type": mt, "url": mu}
             all_chunks.extend(result.data)
 
     all_chunks.sort(key=lambda c: (c.get("file_id", ""), c.get("chunk_index", 0)))
     full_text = "\n\n".join(c["content"] for c in all_chunks)
-    return full_text, file_meta
+    return full_text, file_meta, media_map
 
 
 def split_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:
