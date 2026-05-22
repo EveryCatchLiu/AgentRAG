@@ -13,6 +13,8 @@ class LLMSettings(BaseModel):
     llm_base_url: str = ""
     llm_model: str = ""
     llm_multimodal_model: str = ""
+    bailian_api_key: str = ""
+    bailian_base_url: str = ""
     llm_title_model: str = ""
     llm_system_prompt: str = ""
 

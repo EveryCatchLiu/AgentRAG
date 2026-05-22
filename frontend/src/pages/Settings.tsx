@@ -14,6 +14,8 @@ export default function SettingsPage() {
     llm_base_url: "",
     llm_model: "",
     llm_multimodal_model: "",
+    bailian_api_key: "",
+    bailian_base_url: "",
     llm_title_model: "",
     llm_system_prompt: "",
   })
@@ -49,6 +51,8 @@ export default function SettingsPage() {
         llm_base_url: data.llm_base_url || "",
         llm_model: data.llm_model || "",
         llm_multimodal_model: data.llm_multimodal_model || "",
+        bailian_api_key: data.bailian_api_key || "",
+        bailian_base_url: data.bailian_base_url || "",
         llm_title_model: data.llm_title_model || "",
         llm_system_prompt: data.llm_system_prompt || "",
       })
@@ -249,6 +253,33 @@ export default function SettingsPage() {
                 <p className="mt-1 text-xs text-muted-foreground">
                   Auto-selected when images/videos are attached
                 </p>
+              </div>
+            </div>
+
+            {/* Bailian API Key & Base URL */}
+            <div className="border-t pt-4">
+              <p className="mb-3 text-sm font-medium text-muted-foreground">Bailian Platform (Multimodal)</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Bailian API Key</label>
+                  <input
+                    type="password"
+                    value={llmForm.bailian_api_key}
+                    onChange={(e) => setLlmForm({ ...llmForm, bailian_api_key: e.target.value })}
+                    placeholder="sk-..."
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium">Bailian Base URL</label>
+                  <input
+                    type="text"
+                    value={llmForm.bailian_base_url}
+                    onChange={(e) => setLlmForm({ ...llmForm, bailian_base_url: e.target.value })}
+                    placeholder="https://dashscope.aliyuncs.com/compatible-mode/v1"
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
               </div>
             </div>
 
