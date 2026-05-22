@@ -64,7 +64,7 @@ export default function Chat() {
 
     const assistantMessage: Message = { role: "assistant", content: "" }
     addMessage(assistantMessage)
-    const assistantIndex = messages.length + 1
+    const assistantIndex = messages.length - 1
 
     try {
       const response = await fetch(
