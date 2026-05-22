@@ -549,14 +549,14 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         return text.strip()
 
     def _download_image_for_llm(url: str) -> str | None:
-        """Download an image from Supabase Storage and return as base64 data URI."""
+        """Download an image from Supabase and return as base64 data URI."""
         import base64
-        import urllib.request
+        from src.supabase_client import storage_bucket
         try:
-            req = urllib.request.Request(url)
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                img_bytes = resp.read()
-            # Determine MIME type from magic bytes
+            # Extract the path from the full Supabase URL
+            # URL pattern: .../storage/v1/object/public/documents/<path>
+            path = url.split("/storage/v1/object/public/documents/")[-1]
+            img_bytes = storage_bucket.download(path)
             mime = "image/jpeg"
             if img_bytes[:4] == b'\x89PNG':
                 mime = "image/png"

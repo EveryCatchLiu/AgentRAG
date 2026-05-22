@@ -151,11 +151,10 @@ def _truncate_text(text: str, max_chars: int = 60000) -> str:
 def _download_image_as_data_uri(url: str) -> str | None:
     """Download an image and return as base64 data URI for multimodal LLMs."""
     import base64
-    import urllib.request
+    from src.supabase_client import storage_bucket
     try:
-        req = urllib.request.Request(url)
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            img_bytes = resp.read()
+        path = url.split("/storage/v1/object/public/documents/")[-1]
+        img_bytes = storage_bucket.download(path)
         mime = "image/jpeg"
         if img_bytes[:4] == b'\x89PNG':
             mime = "image/png"
