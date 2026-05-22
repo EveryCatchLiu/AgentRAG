@@ -614,6 +614,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                     messages=messages,
                     tools=TOOLS,
                     tool_choice="auto",
+                    timeout=120,
                 )
             except Exception as e:
                 error_msg = str(e)
@@ -728,7 +729,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                 # Stream the final answer — push chunks to queue in real-time
                 current_model, platform = resolve_model(messages, user_settings)
                 active_client = bailian_llm_client if platform == "bailian" else llm_client
-                stream = active_client.chat.completions.create(model=current_model, messages=messages, stream=True)
+                stream = active_client.chat.completions.create(model=current_model, messages=messages, stream=True, timeout=120)
                 full_text = ""
                 for chunk in stream:
                     delta = chunk.choices[0].delta

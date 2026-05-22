@@ -100,6 +100,7 @@ class TaskOrchestrator:
                 messages=messages,
                 response_format={"type": "json_object"},
                 max_tokens=2000,
+                timeout=120,
             )
             raw = completion.choices[0].message.content.strip()
             result = json.loads(raw)
@@ -223,5 +224,6 @@ class TaskOrchestrator:
             model=self.model,
             messages=messages,
             max_tokens=4000,
+            timeout=120,
         )
         return completion.choices[0].message.content or ""

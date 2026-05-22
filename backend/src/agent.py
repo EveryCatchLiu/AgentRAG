@@ -246,6 +246,7 @@ class SubAgentExecutor:
                     messages=messages,
                     tools=SUBAGENT_TOOLS,
                     tool_choice="auto",
+                    timeout=120,
                 )
             except Exception as e:
                 return SubAgentResult(
@@ -330,6 +331,7 @@ class SubAgentExecutor:
             try:
                 last_resp = self.llm_client.chat.completions.create(
                     model=self.model, messages=messages,
+                    timeout=120,
                 )
                 final_answer = last_resp.choices[0].message.content or "Sub-agent produced no answer."
                 reasoning = getattr(last_resp.choices[0].message, "reasoning_content", None)
