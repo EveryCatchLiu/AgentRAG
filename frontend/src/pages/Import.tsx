@@ -286,7 +286,7 @@ export default function Import() {
               {files.map((file) => (
                 <div key={file.id}>
                   <div
-                    className={`flex items-center justify-between rounded-md border px-4 py-3 transition-colors ${
+                    className={`group flex items-center justify-between rounded-md border px-4 py-3 transition-colors ${
                       file.status === "done" || file.status === "outdated"
                         ? "cursor-pointer hover:bg-accent/50"
                         : ""
@@ -317,7 +317,7 @@ export default function Import() {
                           e.stopPropagation()
                           handleDelete(file.id)
                         }}
-                        className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="rounded p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
