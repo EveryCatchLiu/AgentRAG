@@ -195,3 +195,32 @@ def ocr_with_mistral(
         texts.append(markdown)
 
     return "\n\n".join(texts)
+
+
+def resolve_model(messages: list[dict], user_settings: dict = None) -> str:
+    """Determine which model to use based on message content.
+
+    If any message contains image or video → multimodal_model (qwen3-vl).
+    Otherwise → default model (deepseek-v4-flash).
+    """
+    from src.config import settings
+
+    for msg in messages:
+        content = msg.get("content", "")
+        if isinstance(content, list):
+            # Multimodal content array: check for image_url or video_url parts
+            for part in content:
+                if isinstance(part, dict) and (
+                    part.get("type") in ("image_url", "video_url")
+                    or "image_url" in part
+                    or "video_url" in part
+                ):
+                    mm = (user_settings or {}).get("llm_multimodal_model")
+                    return mm or settings.multimodal_model
+        elif isinstance(content, str):
+            # Check for base64 images or video refs embedded in text
+            if "data:image/" in content or "data:video/" in content:
+                mm = (user_settings or {}).get("llm_multimodal_model")
+                return mm or settings.multimodal_model
+
+    return (user_settings or {}).get("llm_model") or settings.model
