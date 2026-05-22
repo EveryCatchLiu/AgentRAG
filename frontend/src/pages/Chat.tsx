@@ -66,6 +66,7 @@ export default function Chat() {
     addMessage(assistantMessage)
     // Use getState() for real-time length, not closure's stale messages
     const assistantIndex = useChatStore.getState().messages.length - 1
+    let timeout: ReturnType<typeof setTimeout> | null = null
 
     try {
       const response = await fetch(
@@ -92,7 +93,6 @@ export default function Chat() {
       let fullText = ""
       let currentEvent = ""
       let streamDone = false
-      let timeout: ReturnType<typeof setTimeout> | null = null
 
       // Safety timeout: stop streaming after 120s no matter what
       timeout = setTimeout(() => {
