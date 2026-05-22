@@ -12,6 +12,7 @@ class LLMSettings(BaseModel):
     llm_api_key: str
     llm_base_url: str = ""
     llm_model: str = ""
+    llm_multimodal_model: str = ""
     llm_title_model: str = ""
     llm_system_prompt: str = ""
 
@@ -19,7 +20,7 @@ class LLMSettings(BaseModel):
 class EmbeddingSettings(BaseModel):
     embedding_api_key: str
     embedding_base_url: str = ""
-    embedding_model: str = "text-embedding-v3"
+    embedding_model: str = "qwen3-vl-embedding"
     chunk_size: int = 1000
     chunk_overlap: int = 200
 
