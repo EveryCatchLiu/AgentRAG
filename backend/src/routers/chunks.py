@@ -1,3 +1,4 @@
+import base64
 import csv
 import io
 import json
@@ -6,7 +7,7 @@ import uuid
 from typing import List
 
 from src.config import settings
-from src.openai_client import create_embedding_client
+from src.openai_client import get_multimodal_embedding
 from src.supabase_client import supabase, storage_bucket
 
 
@@ -68,26 +69,16 @@ def split_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[st
     return [c.strip() for c in chunks if c.strip()]
 
 
-def get_embedding(text: str, user_settings: dict = None) -> List[float]:
-    """Generate embedding using configurable embedding provider."""
+def get_embedding(text: str, user_settings: dict = None) -> list[float]:
+    """Generate multimodal embedding. Wraps text in a contents array for the multimodal API."""
+    api_key = ""
     if user_settings and user_settings.get("embedding_api_key"):
-        emb_client = create_embedding_client(
-            api_key=user_settings["embedding_api_key"],
-            base_url=user_settings.get("embedding_base_url", ""),
-        )
-        emb_model = user_settings.get("embedding_model") or "text-embedding-v3"
-    else:
-        emb_client = create_embedding_client(
-            api_key=settings.embedding_api_key,
-            base_url=settings.embedding_base_url,
-        )
-        emb_model = settings.embedding_model or "text-embedding-v3"
-
-    response = emb_client.embeddings.create(
-        model=emb_model,
-        input=text,
+        api_key = user_settings["embedding_api_key"]
+    return get_multimodal_embedding(
+        contents=[{"text": text}],
+        api_key=api_key,
+        enable_fusion=True,
     )
-    return response.data[0].embedding
 
 
 def _decode_text(content: bytes) -> str:
@@ -322,13 +313,29 @@ def process_file(file_id: str, storage_path: str, user_settings: dict = None):
 
         for i, chunk_text in enumerate(chunks):
             try:
-                embedding = get_embedding(chunk_text, user_settings)
+                contents = [{"text": chunk_text}]
+                media_type = None
+                media_url = None
+                ext = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
+                if ext in ("png", "jpg", "jpeg", "tiff", "tif", "bmp", "webp"):
+                    media_type = "image"
+                    media_url = supabase.storage.from_("documents").get_public_url(storage_path)
+                    try:
+                        img_b64 = base64.b64encode(file_content).decode("utf-8")
+                        mime = f"image/{'jpeg' if ext in ('jpg', 'jpeg') else ext}"
+                        contents.append({"image": f"data:{mime};base64,{img_b64}"})
+                    except Exception:
+                        pass
+
+                embedding = get_multimodal_embedding(contents, api_key="")
                 supabase.table("chunks").insert({
                     "id": str(uuid.uuid4()),
                     "file_id": file_id,
                     "content": chunk_text,
                     "embedding": embedding,
                     "chunk_index": i,
+                    "media_type": media_type,
+                    "media_url": media_url,
                 }).execute()
             except Exception as e:
                 print(f"Error processing chunk {i}: {e}")
@@ -526,6 +533,7 @@ def search_chunks(
     filter_file_ids: List[str] | None = None,
     filter_topics: List[str] | None = None,
     filter_doc_types: List[str] | None = None,
+    query_embedding: list[float] | None = None,
 ) -> List[dict]:
     """Hybrid search: vector + keyword → RRF fusion → diversity → rerank.
 
@@ -540,7 +548,7 @@ def search_chunks(
     # 1. Vector search
     vector_results = []
     if retrieval_method in ("hybrid", "vector"):
-        embedding = get_embedding(query, user_settings)
+        embedding = query_embedding or get_embedding(query, user_settings)
         try:
             result = supabase.rpc(
                 "match_chunks",
@@ -588,7 +596,7 @@ def search_chunks(
     # Absolute fallback: keyword matching
     keywords = query.lower().split()
     result = supabase.table("chunks").select(
-        "content, chunk_index, file_id, files!inner(filename)"
+        "content, chunk_index, file_id, media_type, media_url, files!inner(filename)"
     ).limit(50).execute()
 
     scored = []
@@ -602,6 +610,8 @@ def search_chunks(
                 "filename": chunk["files"]["filename"],
                 "chunk_index": chunk["chunk_index"],
                 "file_id": chunk["file_id"],
+                "media_type": chunk.get("media_type"),
+                "media_url": chunk.get("media_url"),
             })
 
     scored.sort(key=lambda x: x["similarity"], reverse=True)
