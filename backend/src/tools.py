@@ -96,6 +96,9 @@ TOOLS = [
 
 def execute_search_web(query: str, api_key: str = "") -> str:
     """Search the web using Tavily Search API and return formatted results."""
+    # Always fall back to default API key
+    if not api_key:
+        api_key = settings.tavily_api_key
     results = []
 
     # For weather queries, try wttr.in for structured weather data
@@ -351,7 +354,7 @@ def execute_tool(name: str, arguments: dict, user_settings: dict = None) -> str:
     # Inject Tavily API key into search_web calls: prefer user setting, fall back to config default
     if name == "search_web":
         if not arguments.get("api_key"):
-            user_key = (user_settings or {}).get("tavily_api_key", "")
-            arguments["api_key"] = user_key or settings.tavily_api_key
+            user_key = (user_settings or {}).get("tavily_api_key", "") or settings.tavily_api_key
+            arguments["api_key"] = user_key
 
     return executor(**arguments)
