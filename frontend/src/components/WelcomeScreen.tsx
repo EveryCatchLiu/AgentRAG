@@ -159,7 +159,7 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
   }, [initParticles])
 
   return (
-    <div className="relative flex-1 overflow-hidden bg-[#faf9f7]">
+    <div className="relative flex-1 overflow-hidden" style={{ background: "linear-gradient(135deg, #fef9f5 0%, #faf5ef 30%, #f8f2ea 60%, #fdf7f2 100%)" }}>
       <canvas
         ref={canvasRef}
         className="absolute inset-0 pointer-events-none"
