@@ -168,24 +168,24 @@ export default function WelcomeScreen({ onCreateThread }: { onCreateThread: () =
 
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-40 -left-40 w-[40rem] h-[40rem] rounded-full opacity-[0.06]"
+          className="absolute -top-60 -left-60 w-[60rem] h-[60rem] rounded-full opacity-[0.10]"
           style={{
-            background: "radial-gradient(circle, #e8954c 0%, transparent 70%)",
-            animation: "float 18s ease-in-out infinite",
+            background: "radial-gradient(circle, #e8954c 0%, transparent 65%)",
+            animation: "float 20s ease-in-out infinite",
           }}
         />
         <div
-          className="absolute top-1/3 -right-32 w-[50rem] h-[50rem] rounded-full opacity-[0.04]"
+          className="absolute top-1/4 -right-48 w-[70rem] h-[70rem] rounded-full opacity-[0.08]"
           style={{
-            background: "radial-gradient(circle, #d4905e 0%, transparent 70%)",
-            animation: "float 22s ease-in-out infinite 4s",
+            background: "radial-gradient(circle, #d4704a 0%, transparent 65%)",
+            animation: "float 24s ease-in-out infinite 5s",
           }}
         />
         <div
-          className="absolute -bottom-36 left-1/4 w-[36rem] h-[36rem] rounded-full opacity-[0.04]"
+          className="absolute -bottom-48 left-1/5 w-[50rem] h-[50rem] rounded-full opacity-[0.07]"
           style={{
-            background: "radial-gradient(circle, #f0b878 0%, transparent 70%)",
-            animation: "float 20s ease-in-out infinite 8s",
+            background: "radial-gradient(circle, #e8954c 0%, transparent 65%)",
+            animation: "float 22s ease-in-out infinite 10s",
           }}
         />
       </div>
