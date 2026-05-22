@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # Alibaba Bailian (multimodal LLM fallback + embedding)
     bailian_api_key: str = ""
     bailian_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    multimodal_model: str = "qwen3-vl"
+    multimodal_model: str = "qwen3-vl-flash"
     embedding_api_key: str = ""
     embedding_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     embedding_model: str = "qwen3-vl-embedding"
