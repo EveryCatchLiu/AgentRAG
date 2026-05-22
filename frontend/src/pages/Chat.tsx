@@ -448,15 +448,14 @@ export default function Chat() {
                               检索到的图片 ({msg.retrievedImages.length})
                             </p>
                             <div className="flex gap-2 flex-wrap">
-                              {msg.retrievedImages.map((img, i) => (
+                              {msg.retrievedImages.map((path, i) => (
                                 <img
                                   key={i}
-                                  src={img}
+                                  src={`/api/images/proxy?path=${encodeURIComponent(path)}`}
                                   alt={`Retrieved ${i + 1}`}
                                   className="max-h-48 max-w-[300px] object-cover rounded-lg border border-[#f0e0c8] cursor-pointer hover:opacity-90 transition-opacity"
                                   onClick={() => {
-                                    // Open in a new tab for full size
-                                    window.open(img, "_blank")
+                                    window.open(`/api/images/proxy?path=${encodeURIComponent(path)}`, "_blank")
                                   }}
                                 />
                               ))}

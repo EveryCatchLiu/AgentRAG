@@ -744,12 +744,12 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
 
         _push("_done", None)
 
-    # Download chunk images for frontend display
-    retrieved_images = []
+    # Collect chunk image storage paths for frontend display
+    retrieved_image_paths = []
     for img_url in chunk_images:
-        data_uri = _download_chunk_image(img_url)
-        if data_uri:
-            retrieved_images.append(data_uri)
+        path = img_url.split("/storage/v1/object/public/documents/")[-1] if "/storage/v1/object/public/documents/" in img_url else ""
+        if path:
+            retrieved_image_paths.append(path)
 
     # Start agent loop in background thread
     agent_thread = threading.Thread(target=run_agent_loop, daemon=True)
@@ -785,9 +785,9 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                 else:
                     yield f"event: {event_type}\ndata: {json.dumps(event_data, ensure_ascii=False)}\n\n"
 
-            # Emit retrieved images before sources
-            if retrieved_images:
-                yield f"event: retrieved_images\ndata: {json.dumps(retrieved_images, ensure_ascii=False)}\n\n"
+            # Emit retrieved image paths for frontend display
+            if retrieved_image_paths:
+                yield f"event: retrieved_images\ndata: {json.dumps(retrieved_image_paths, ensure_ascii=False)}\n\n"
 
             # Emit sources after tool events
             if chunks:
