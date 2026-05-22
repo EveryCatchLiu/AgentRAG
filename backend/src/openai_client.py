@@ -3,11 +3,105 @@ import os
 from openai import OpenAI
 from mistralai.client.sdk import Mistral
 from src.config import settings
+import json
+import urllib.request
+import urllib.error
 
 os.environ.setdefault("LANGCHAIN_TRACING_V2", settings.langchain_tracing_v2)
 if settings.langchain_api_key:
     os.environ["LANGCHAIN_API_KEY"] = settings.langchain_api_key
 os.environ["LANGCHAIN_PROJECT"] = settings.langchain_project
+
+
+MULTIMODAL_EMBEDDING_URL = (
+    "https://dashscope.aliyuncs.com/api/v1/services/embeddings"
+    "/multimodal-embedding/multimodal-embedding"
+)
+
+
+def get_multimodal_embedding(
+    contents: list[dict],
+    api_key: str = "",
+    enable_fusion: bool = True,
+) -> list[float]:
+    """Generate multimodal embedding via DashScope API.
+
+    contents: list of dicts like {"text": "..."}, {"image": "data:image/...;base64,..."},
+              or {"video": "https://..."}
+    enable_fusion: if True, all inputs fused into a single vector
+
+    Returns a single embedding vector (list of floats).
+    """
+    key = api_key or settings.embedding_api_key
+    if not key:
+        raise ValueError("Embedding API key is required")
+
+    # Downsample large base64 images (>5MB)
+    processed = []
+    for item in contents:
+        if "image" in item:
+            img = item["image"]
+            if img.startswith("data:") and len(img) > 5 * 1024 * 1024:
+                img = _downsample_base64_image(img)
+            processed.append({"image": img})
+        else:
+            processed.append(item)
+
+    body = json.dumps({
+        "model": settings.embedding_model,
+        "input": {"contents": processed},
+        "parameters": {"enable_fusion": enable_fusion},
+    }).encode("utf-8")
+
+    req = urllib.request.Request(
+        MULTIMODAL_EMBEDDING_URL,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {key}",
+        },
+    )
+
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                data = json.loads(resp.read().decode())
+            embeddings = data.get("output", {}).get("embeddings", [])
+            if embeddings:
+                return embeddings[0].get("embedding", [])
+            return []
+        except urllib.error.HTTPError as e:
+            body_text = e.read().decode() if e.fp else ""
+            if attempt == 0:
+                import time
+                time.sleep(5)
+                continue
+            raise RuntimeError(
+                f"Multimodal embedding API error {e.code}: {body_text}"
+            ) from e
+    return []
+
+
+def _downsample_base64_image(data_uri: str, max_size: int = 2048) -> str:
+    """Resize a base64 image to max_size on longest side using PIL."""
+    import base64
+    import io
+    try:
+        from PIL import Image
+    except ImportError:
+        return data_uri
+
+    header, b64data = data_uri.split(",", 1)
+    img_bytes = base64.b64decode(b64data)
+    img = Image.open(io.BytesIO(img_bytes))
+    w, h = img.size
+    if max(w, h) > max_size:
+        ratio = max_size / max(w, h)
+        img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+    buf = io.BytesIO()
+    fmt = img.format or "JPEG"
+    img.save(buf, format=fmt, quality=85)
+    return f"{header},{base64.b64encode(buf.getvalue()).decode()}"
 
 
 def create_llm_client(
