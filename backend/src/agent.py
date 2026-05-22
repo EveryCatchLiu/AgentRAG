@@ -148,6 +148,27 @@ def _truncate_text(text: str, max_chars: int = 60000) -> str:
     return truncated + "\n\n[... Document truncated due to length ...]"
 
 
+def _download_image_as_data_uri(url: str) -> str | None:
+    """Download an image and return as base64 data URI for multimodal LLMs."""
+    import base64
+    import urllib.request
+    try:
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            img_bytes = resp.read()
+        mime = "image/jpeg"
+        if img_bytes[:4] == b'\x89PNG':
+            mime = "image/png"
+        elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
+            mime = "image/webp"
+        elif img_bytes[:2] in (b'\xff\xd8',):
+            mime = "image/jpeg"
+        b64 = base64.b64encode(img_bytes).decode()
+        return f"data:{mime};base64,{b64}"
+    except Exception:
+        return None
+
+
 class SubAgentExecutor:
     """Runs an isolated sub-agent session for full-document analysis."""
 
@@ -207,10 +228,12 @@ class SubAgentExecutor:
         if self.chunk_images:
             user_parts: list[dict] = [{"type": "text", "text": self.task}]
             for img_url in self.chunk_images:
-                user_parts.append({
-                    "type": "image_url",
-                    "image_url": {"url": img_url},
-                })
+                img_data = _download_image_as_data_uri(img_url)
+                if img_data:
+                    user_parts.append({
+                        "type": "image_url",
+                        "image_url": {"url": img_data},
+                    })
             messages.append({"role": "user", "content": user_parts})
         else:
             messages.append({"role": "user", "content": self.task})

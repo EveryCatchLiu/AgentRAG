@@ -486,13 +486,18 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                 })
         user_content = parts
     elif chunk_images:
-        # Retrieved images from vector DB — show them to the multimodal model
+        # Retrieved images from vector DB — download and pass as base64 to the model
         parts = [{"type": "text", "text": request.content}]
         for img_url in chunk_images:
-            parts.append({
-                "type": "image_url",
-                "image_url": {"url": img_url},
-            })
+            try:
+                img_data = _download_image_for_llm(img_url)
+                if img_data:
+                    parts.append({
+                        "type": "image_url",
+                        "image_url": {"url": img_data},
+                    })
+            except Exception:
+                pass
         user_content = parts
     # else: user_content stays as plain text string
 
@@ -542,6 +547,27 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         text = re.sub(r'</parameter>', '', text)
         text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
+
+    def _download_image_for_llm(url: str) -> str | None:
+        """Download an image from Supabase Storage and return as base64 data URI."""
+        import base64
+        import urllib.request
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                img_bytes = resp.read()
+            # Determine MIME type from magic bytes
+            mime = "image/jpeg"
+            if img_bytes[:4] == b'\x89PNG':
+                mime = "image/png"
+            elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
+                mime = "image/webp"
+            elif img_bytes[:2] in (b'\xff\xd8',):
+                mime = "image/jpeg"
+            b64 = base64.b64encode(img_bytes).decode()
+            return f"data:{mime};base64,{b64}"
+        except Exception:
+            return None
 
     def run_agent_loop():
         """Run the full agent loop in a background thread, pushing events to queue in real-time."""
