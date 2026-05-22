@@ -112,7 +112,7 @@ def create_llm_client(
     api_key: str,
     base_url: str = "",
 ) -> OpenAI:
-    """Create an OpenAI-compatible client with optional LangSmith wrapping."""
+    """Create an OpenAI-compatible client (DeepSeek official)."""
     client = OpenAI(
         api_key=api_key or settings.openai_api_key,
         base_url=base_url or settings.openai_base_url,
@@ -124,22 +124,24 @@ def create_llm_client(
         return client
 
 
-def create_embedding_client(
-    api_key: str,
+def create_bailian_client(
+    api_key: str = "",
     base_url: str = "",
 ) -> OpenAI:
-    """Create a separate client for embeddings."""
+    """Create an OpenAI-compatible client for Alibaba Bailian platform."""
     return OpenAI(
-        api_key=api_key or settings.embedding_api_key,
-        base_url=base_url or settings.embedding_base_url,
+        api_key=api_key or settings.bailian_api_key,
+        base_url=base_url or settings.bailian_base_url,
     )
 
 
-# Default clients (from env vars)
-client = create_llm_client(
+# Default clients
+deepseek_client = create_llm_client(
     api_key=settings.openai_api_key,
     base_url=settings.openai_base_url,
 )
+
+bailian_client = create_bailian_client()
 
 
 def create_mistral_client(api_key: str = "") -> Mistral:
@@ -197,18 +199,19 @@ def ocr_with_mistral(
     return "\n\n".join(texts)
 
 
-def resolve_model(messages: list[dict], user_settings: dict = None) -> str:
-    """Determine which model to use based on message content.
+def resolve_model(messages: list[dict], user_settings: dict = None) -> tuple[str, str]:
+    """Determine which model and platform to use based on message content.
 
-    If any message contains image or video → multimodal_model (qwen3-vl).
-    Otherwise → default model (deepseek-v4-flash).
+    Returns: (model_name, platform) where platform is "deepseek" or "bailian"
+
+    If any message contains image or video → bailian multimodal_model (qwen3-vl).
+    Otherwise → deepseek official model (deepseek-v4-flash).
     """
     from src.config import settings
 
     for msg in messages:
         content = msg.get("content", "")
         if isinstance(content, list):
-            # Multimodal content array: check for image_url or video_url parts
             for part in content:
                 if isinstance(part, dict) and (
                     part.get("type") in ("image_url", "video_url")
@@ -216,11 +219,10 @@ def resolve_model(messages: list[dict], user_settings: dict = None) -> str:
                     or "video_url" in part
                 ):
                     mm = (user_settings or {}).get("llm_multimodal_model")
-                    return mm or settings.multimodal_model
+                    return (mm or settings.multimodal_model, "bailian")
         elif isinstance(content, str):
-            # Check for base64 images or video refs embedded in text
             if "data:image/" in content or "data:video/" in content:
                 mm = (user_settings or {}).get("llm_multimodal_model")
-                return mm or settings.multimodal_model
+                return (mm or settings.multimodal_model, "bailian")
 
-    return (user_settings or {}).get("llm_model") or settings.model
+    return ((user_settings or {}).get("llm_model") or settings.model, "deepseek")

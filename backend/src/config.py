@@ -4,9 +4,13 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     supabase_url: str = ""
     supabase_service_role_key: str = ""
+    # DeepSeek official (text-only LLM)
     openai_api_key: str = ""
-    openai_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
+    openai_base_url: str = "https://api.deepseek.com"
     model: str = "deepseek-v4-flash"
+    # Alibaba Bailian (multimodal LLM fallback + embedding)
+    bailian_api_key: str = ""
+    bailian_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     multimodal_model: str = "qwen3-vl"
     embedding_api_key: str = ""
     embedding_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"

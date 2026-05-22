@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.config import settings
-from src.openai_client import create_llm_client, resolve_model, get_multimodal_embedding
+from src.openai_client import create_llm_client, create_bailian_client, resolve_model, get_multimodal_embedding
 from src.supabase_client import supabase
 from src.routers.chunks import search_chunks
 from src.tools import TOOLS, execute_tool
@@ -484,10 +484,14 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             history_msgs[-1]["content"] = user_content  # multimodal array
     messages += history_msgs
 
-    # Create LLM client with user settings
+    # Create LLM clients for both platforms
     llm_client = create_llm_client(
         api_key=user_settings.get("llm_api_key", ""),
         base_url=user_settings.get("llm_base_url", ""),
+    )
+    bailian_llm_client = create_bailian_client(
+        api_key=user_settings.get("bailian_api_key", ""),
+        base_url=user_settings.get("bailian_base_url", ""),
     )
     model = user_settings.get("llm_model") or settings.model
 
@@ -520,11 +524,12 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
 
         # Tool-calling loop
         tools_supported = True
-        current_model = resolve_model(messages, user_settings)
+        current_model, platform = resolve_model(messages, user_settings)
+        active_client = bailian_llm_client if platform == "bailian" else llm_client
 
         for _ in range(max_tool_rounds):
             try:
-                tool_response = llm_client.chat.completions.create(
+                tool_response = active_client.chat.completions.create(
                     model=current_model,
                     messages=messages,
                     tools=TOOLS,
@@ -641,8 +646,9 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             messages.append({"role": "user", "content": "请基于以上搜索结果，用中文直接回答用户的问题。不要再次搜索，直接给出答案。"})
             try:
                 # Stream the final answer — push chunks to queue in real-time
-                current_model = resolve_model(messages, user_settings)
-                stream = llm_client.chat.completions.create(model=current_model, messages=messages, stream=True)
+                current_model, platform = resolve_model(messages, user_settings)
+                active_client = bailian_llm_client if platform == "bailian" else llm_client
+                stream = active_client.chat.completions.create(model=current_model, messages=messages, stream=True)
                 full_text = ""
                 for chunk in stream:
                     delta = chunk.choices[0].delta
