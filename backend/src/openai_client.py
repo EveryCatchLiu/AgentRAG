@@ -4,6 +4,7 @@ from openai import OpenAI
 from mistralai.client.sdk import Mistral
 from src.config import settings
 import json
+import time
 import urllib.request
 import urllib.error
 
@@ -70,16 +71,16 @@ def get_multimodal_embedding(
             if embeddings:
                 return embeddings[0].get("embedding", [])
             return []
-        except urllib.error.HTTPError as e:
-            body_text = e.read().decode() if e.fp else ""
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
             if attempt == 0:
-                import time
                 time.sleep(5)
                 continue
+            body_text = ""
+            if isinstance(e, urllib.error.HTTPError) and e.fp:
+                body_text = e.read().decode()
             raise RuntimeError(
-                f"Multimodal embedding API error {e.code}: {body_text}"
+                f"Multimodal embedding API error: {e}"
             ) from e
-    return []
 
 
 def _downsample_base64_image(data_uri: str, max_size: int = 2048) -> str:
@@ -88,12 +89,15 @@ def _downsample_base64_image(data_uri: str, max_size: int = 2048) -> str:
     import io
     try:
         from PIL import Image
-    except ImportError:
+    except ModuleNotFoundError:
         return data_uri
 
     header, b64data = data_uri.split(",", 1)
     img_bytes = base64.b64decode(b64data)
-    img = Image.open(io.BytesIO(img_bytes))
+    try:
+        img = Image.open(io.BytesIO(img_bytes))
+    except Exception:
+        return data_uri
     w, h = img.size
     if max(w, h) > max_size:
         ratio = max_size / max(w, h)
