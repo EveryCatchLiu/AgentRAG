@@ -563,6 +563,26 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     final_answer = None
     max_tool_rounds = 2
 
+    def _download_image_for_llm(url: str) -> str | None:
+        """Download an image from Supabase and return as base64 data URI."""
+        import base64
+        from src.supabase_client import storage_bucket
+        try:
+            path = url.split("/storage/v1/object/public/documents/")[-1]
+            img_bytes = storage_bucket.download(path)
+            mime = "image/jpeg"
+            if img_bytes[:4] == b'\x89PNG':
+                mime = "image/png"
+            elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
+                mime = "image/webp"
+            elif img_bytes[:2] in (b'\xff\xd8',):
+                mime = "image/jpeg"
+            b64 = base64.b64encode(img_bytes).decode()
+            return f"data:{mime};base64,{b64}"
+        except Exception as e:
+            print(f"[DEBUG] Image download failed: {e}", flush=True)
+            return None
+
     def _push(event_type: str, data):
         """Push an event to the queue."""
         event_queue.put((event_type, data))
@@ -576,30 +596,6 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         text = re.sub(r'</parameter>', '', text)
         text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
-
-    def _download_image_for_llm(url: str) -> str | None:
-        """Download an image from Supabase and return as base64 data URI."""
-        import base64
-        from src.supabase_client import storage_bucket
-        try:
-            # Extract the path from the full Supabase URL
-            # URL pattern: .../storage/v1/object/public/documents/<path>
-            path = url.split("/storage/v1/object/public/documents/")[-1]
-            img_bytes = storage_bucket.download(path)
-            mime = "image/jpeg"
-            if img_bytes[:4] == b'\x89PNG':
-                mime = "image/png"
-            elif img_bytes[:4] == b'RIFF' and img_bytes[8:12] == b'WEBP':
-                mime = "image/webp"
-            elif img_bytes[:2] in (b'\xff\xd8',):
-                mime = "image/jpeg"
-            b64 = base64.b64encode(img_bytes).decode()
-            result = f"data:{mime};base64,{b64}"
-            print(f"[DEBUG] Downloaded image: {len(img_bytes)} bytes -> {len(result)} chars", flush=True)
-            return result
-        except Exception as e:
-            print(f"[DEBUG] Image download failed: {e}", flush=True)
-            return None
 
     def run_agent_loop():
         """Run the full agent loop in a background thread, pushing events to queue in real-time."""
