@@ -443,6 +443,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             # Collect image URLs from retrieved chunks
             if chunk.get("media_type") == "image" and chunk.get("media_url"):
                 chunk_images.append(chunk["media_url"])
+        print(f"[DEBUG] chunks={len(chunks)} chunk_images={len(chunk_images)} seen_files={seen_files}", flush=True)
         file_list = "\n".join(f"  - {name} (file_id: {fid})" for fid, name in seen_files.items())
 
         for i, chunk in enumerate(chunks, 1):
@@ -487,6 +488,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         user_content = parts
     elif chunk_images:
         # Retrieved images from vector DB — download and pass as base64 to the model
+        print(f"[DEBUG] Injecting {len(chunk_images)} chunk images into user content", flush=True)
         parts = [{"type": "text", "text": request.content}]
         for img_url in chunk_images:
             try:
@@ -577,6 +579,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         tools_supported = True
         current_model, platform = resolve_model(messages, user_settings)
         active_client = bailian_llm_client if platform == "bailian" else llm_client
+        print(f"[DEBUG] model={current_model} platform={platform}", flush=True)
 
         for _ in range(max_tool_rounds):
             try:
