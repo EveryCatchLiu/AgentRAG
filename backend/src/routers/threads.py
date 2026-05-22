@@ -437,7 +437,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     messages = [
         {"role": "system", "content": system_prompt},
         *[{"role": m["role"], "content": m["content"]} for m in history_result.data
-          if m["role"] in ("user", "assistant", "tool")],
+          if m["role"] in ("user", "assistant")],
     ]
 
     # Create LLM client with user settings

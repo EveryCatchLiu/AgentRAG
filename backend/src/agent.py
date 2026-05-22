@@ -230,8 +230,9 @@ class SubAgentExecutor:
                 final_answer = msg.content or ""
                 break
 
-            # Execute tool calls
+            # Execute tool calls: collect results, append assistant msg first, then tool results
             tc_dicts = []
+            tool_results = []  # (tool_id, result_content)
             for tc in msg.tool_calls:
                 tool_id = tc.id
                 tool_name = tc.function.name
@@ -266,13 +267,9 @@ class SubAgentExecutor:
                     "type": "function",
                     "function": {"name": tool_name, "arguments": tool_args},
                 })
+                tool_results.append((tool_id, result[:2000]))
 
-                messages.append({
-                    "role": "tool",
-                    "tool_call_id": tool_id,
-                    "content": result[:2000],
-                })
-
+            # API requirement: assistant message with tool_calls BEFORE tool result messages
             msg_dict = {
                 "role": "assistant",
                 "content": msg.content or "",
@@ -281,6 +278,13 @@ class SubAgentExecutor:
             if reasoning:
                 msg_dict["reasoning_content"] = reasoning
             messages.append(msg_dict)
+
+            for tool_id, result_content in tool_results:
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_id,
+                    "content": result_content,
+                })
 
         if final_answer is None:
             # Force answer without tools
