@@ -422,6 +422,8 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         )
 
     # Build context from chunks
+    # Also collect images from chunks to pass to multimodal model
+    chunk_images = []
     if chunks:
         context_parts = []
         # Collect unique file references for tool usage
@@ -431,6 +433,9 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             fname = chunk.get("filename", "未知")
             if fid and fid not in seen_files:
                 seen_files[fid] = fname
+            # Collect image URLs from retrieved chunks
+            if chunk.get("media_type") == "image" and chunk.get("media_url"):
+                chunk_images.append(chunk["media_url"])
         file_list = "\n".join(f"  - {name} (file_id: {fid})" for fid, name in seen_files.items())
 
         for i, chunk in enumerate(chunks, 1):
@@ -456,6 +461,8 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     )
     # Build the current user message content (text or multimodal for LLM)
     user_content: str | list[dict] = request.content
+    # Collect all images: user-uploaded + retrieved from chunks
+    all_images: list[str] = []
     if request.media:
         parts = [{"type": "text", "text": request.content}]
         for m in request.media:
@@ -464,12 +471,23 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                     "type": "image_url",
                     "image_url": {"url": m.data},
                 })
+                all_images.append(m.data)
             elif m.type == "video":
                 parts.append({
                     "type": "video_url",
                     "video_url": {"url": m.data},
                 })
         user_content = parts
+    elif chunk_images:
+        # Retrieved images from vector DB — show them to the multimodal model
+        parts = [{"type": "text", "text": request.content}]
+        for img_url in chunk_images:
+            parts.append({
+                "type": "image_url",
+                "image_url": {"url": img_url},
+            })
+        user_content = parts
+    # else: user_content stays as plain text string
 
     history_msgs = [
         {"role": m["role"], "content": m["content"]}
@@ -478,9 +496,9 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     ]
 
     messages = [{"role": "system", "content": system_prompt}]
-    # Replace the last (current) user message content with multimodal version if needed
+    # Replace the last user message with multimodal content if we have images
     if history_msgs:
-        if request.media:
+        if isinstance(user_content, list):
             history_msgs[-1]["content"] = user_content  # multimodal array
     messages += history_msgs
 
