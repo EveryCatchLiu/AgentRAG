@@ -11,7 +11,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from src.config import settings
-from src.openai_client import create_llm_client
+from src.openai_client import create_llm_client, resolve_model, get_multimodal_embedding
 from src.supabase_client import supabase
 from src.routers.chunks import search_chunks
 from src.tools import TOOLS, execute_tool
@@ -253,8 +253,14 @@ class CreateThreadRequest(BaseModel):
     title: str | None = None
 
 
+class MediaAttachment(BaseModel):
+    type: str  # "image" or "video"
+    data: str  # base64 encoded (without data URI prefix for images; URL for videos)
+
+
 class SendMessageRequest(BaseModel):
     content: str
+    media: list[MediaAttachment] | None = None
     filter_file_ids: list[str] | None = None
     filter_topics: list[str] | None = None
     filter_doc_types: list[str] | None = None
@@ -392,14 +398,28 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
     user_settings = settings_result.data[0] if settings_result.data else {}
 
     # Retrieve relevant chunks
-    chunks = search_chunks(
-        request.content,
-        top_k=5,
-        user_settings=user_settings,
-        filter_file_ids=request.filter_file_ids,
-        filter_topics=request.filter_topics,
-        filter_doc_types=request.filter_doc_types,
-    )
+    if request.media:
+        contents = [{"text": request.content}]
+        for m in request.media:
+            if m.type == "image":
+                contents.append({"image": f"data:image/jpeg;base64,{m.data}"})
+            elif m.type == "video":
+                contents.append({"video": m.data})
+        query_embedding = get_multimodal_embedding(contents, api_key="")
+        chunks = search_chunks(
+            request.content, top_k=5, user_settings=user_settings,
+            filter_file_ids=request.filter_file_ids,
+            filter_topics=request.filter_topics,
+            filter_doc_types=request.filter_doc_types,
+            query_embedding=query_embedding,
+        )
+    else:
+        chunks = search_chunks(
+            request.content, top_k=5, user_settings=user_settings,
+            filter_file_ids=request.filter_file_ids,
+            filter_topics=request.filter_topics,
+            filter_doc_types=request.filter_doc_types,
+        )
 
     # Build context from chunks
     if chunks:
@@ -434,11 +454,35 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         .order("created_at", desc=False)
         .execute()
     )
-    messages = [
-        {"role": "system", "content": system_prompt},
-        *[{"role": m["role"], "content": m["content"]} for m in history_result.data
-          if m["role"] in ("user", "assistant")],
+    # Build the current user message content (text or multimodal for LLM)
+    user_content: str | list[dict] = request.content
+    if request.media:
+        parts = [{"type": "text", "text": request.content}]
+        for m in request.media:
+            if m.type == "image":
+                parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{m.data}"},
+                })
+            elif m.type == "video":
+                parts.append({
+                    "type": "video_url",
+                    "video_url": {"url": m.data},
+                })
+        user_content = parts
+
+    history_msgs = [
+        {"role": m["role"], "content": m["content"]}
+        for m in history_result.data
+        if m["role"] in ("user", "assistant")
     ]
+
+    messages = [{"role": "system", "content": system_prompt}]
+    # Replace the last (current) user message content with multimodal version if needed
+    if history_msgs:
+        if request.media:
+            history_msgs[-1]["content"] = user_content  # multimodal array
+    messages += history_msgs
 
     # Create LLM client with user settings
     llm_client = create_llm_client(
@@ -476,11 +520,12 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
 
         # Tool-calling loop
         tools_supported = True
+        current_model = resolve_model(messages, user_settings)
 
         for _ in range(max_tool_rounds):
             try:
                 tool_response = llm_client.chat.completions.create(
-                    model=model,
+                    model=current_model,
                     messages=messages,
                     tools=TOOLS,
                     tool_choice="auto",
@@ -596,7 +641,8 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             messages.append({"role": "user", "content": "请基于以上搜索结果，用中文直接回答用户的问题。不要再次搜索，直接给出答案。"})
             try:
                 # Stream the final answer — push chunks to queue in real-time
-                stream = llm_client.chat.completions.create(model=model, messages=messages, stream=True)
+                current_model = resolve_model(messages, user_settings)
+                stream = llm_client.chat.completions.create(model=current_model, messages=messages, stream=True)
                 full_text = ""
                 for chunk in stream:
                     delta = chunk.choices[0].delta
@@ -656,6 +702,8 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                         "filename": chunk.get("filename", ""),
                         "chunk_index": chunk.get("chunk_index", 0),
                         "file_id": chunk.get("file_id", ""),
+                        "media_type": chunk.get("media_type"),
+                        "media_url": chunk.get("media_url"),
                     })
                 yield f"event: sources\ndata: {json.dumps(sources_payload, ensure_ascii=False)}\n\n"
 
