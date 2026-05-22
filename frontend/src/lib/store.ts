@@ -11,7 +11,7 @@ export interface Thread {
 
 export interface MediaAttachment {
   type: "image" | "video"
-  data: string  // base64 for images, URL for videos
+  data: string  // full data URI for images, URL for videos
   previewUrl?: string  // object URL for local preview
 }
 

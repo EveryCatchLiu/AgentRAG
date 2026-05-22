@@ -225,12 +225,12 @@ export default function Chat() {
       const isVideo = file.type.startsWith("video/")
       const reader = new FileReader()
       reader.onload = () => {
-        const base64 = (reader.result as string).split(",")[1]
+        const dataUri = reader.result as string
         setMediaAttachments((prev) => [
           ...prev,
           {
             type: isVideo ? "video" : "image",
-            data: base64,
+            data: dataUri,
             previewUrl: URL.createObjectURL(file),
           },
         ])
@@ -409,7 +409,7 @@ export default function Chat() {
                                       <div key={i}>
                                         {m.type === "image" ? (
                                           <img
-                                            src={m.previewUrl || `data:image/jpeg;base64,${m.data}`}
+                                            src={m.previewUrl || m.data}
                                             alt="Attached"
                                             className="max-h-48 max-w-[300px] object-cover rounded-lg border border-white/20"
                                           />

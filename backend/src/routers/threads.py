@@ -255,7 +255,7 @@ class CreateThreadRequest(BaseModel):
 
 class MediaAttachment(BaseModel):
     type: str  # "image" or "video"
-    data: str  # base64 encoded (without data URI prefix for images; URL for videos)
+    data: str  # full data URI for images (data:image/...;base64,...), URL for videos
 
 
 class SendMessageRequest(BaseModel):
@@ -402,7 +402,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
         contents = [{"text": request.content}]
         for m in request.media:
             if m.type == "image":
-                contents.append({"image": f"data:image/jpeg;base64,{m.data}"})
+                contents.append({"image": m.data})
             elif m.type == "video":
                 contents.append({"video": m.data})
         query_embedding = get_multimodal_embedding(contents, api_key="")
@@ -462,7 +462,7 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
             if m.type == "image":
                 parts.append({
                     "type": "image_url",
-                    "image_url": {"url": f"data:image/jpeg;base64,{m.data}"},
+                    "image_url": {"url": m.data},
                 })
             elif m.type == "video":
                 parts.append({
