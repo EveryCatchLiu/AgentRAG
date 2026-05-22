@@ -51,7 +51,7 @@ def get_multimodal_embedding(
     body = json.dumps({
         "model": settings.embedding_model,
         "input": {"contents": processed},
-        "parameters": {"enable_fusion": enable_fusion},
+        "parameters": {"enable_fusion": enable_fusion, "dimension": 1024},
     }).encode("utf-8")
 
     req = urllib.request.Request(
