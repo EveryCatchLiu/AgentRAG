@@ -202,55 +202,8 @@ def execute_search_web(query: str, api_key: str = "") -> str:
 
 
 def execute_query_database(question: str) -> str:
-    """Convert a natural language question to SQL, execute it, and return results."""
-    from src.openai_client import create_llm_client
-
-    # Get table schemas for context
-    schema_info = """
-Table: files (id uuid, user_id uuid, filename text, status text, total_chunks int, content_hash text, metadata jsonb, created_at timestamptz, updated_at timestamptz)
-Table: chunks (id uuid, file_id uuid REFERENCES files, content text, chunk_index int, created_at timestamptz)
-Table: user_settings (user_id uuid, llm_api_key text, llm_base_url text, llm_model text, chunk_size int, chunk_overlap int, embedding_api_key text, embedding_base_url text, embedding_model text)
-Table: threads (id uuid, user_id uuid, title text, created_at timestamptz, updated_at timestamptz)
-Table: messages (id uuid, thread_id uuid REFERENCES threads, role text, content text, created_at timestamptz)
-"""
-
-    sql_prompt = f"""You are a PostgreSQL expert. Given the following database schema and a user question, generate a single SQL SELECT query to answer it.
-
-{schema_info}
-
-User question: {question}
-
-Rules:
-- Only SELECT statements. No INSERT/UPDATE/DELETE/DROP.
-- Use appropriate aggregate functions (COUNT, SUM, etc.)
-- Always include a LIMIT clause (max 50).
-- Return ONLY the SQL query, no explanation.
-- Use PostgreSQL syntax.
-- For JSONB metadata fields, use -> or ->> operators.
-
-SQL query:"""
-
-    client = create_llm_client(api_key="", base_url="")
-    model = settings.model
-
-    try:
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": sql_prompt}],
-            max_tokens=300,
-        )
-        sql = completion.choices[0].message.content.strip()
-        # Clean up SQL (remove markdown code fences if present)
-        sql = sql.removeprefix("```sql").removeprefix("```").removesuffix("```").strip()
-
-        # Execute the SQL via Supabase
-        # Use raw SQL execution via the supabase client
-        result = supabase.rpc("exec_sql", {"query": sql}).execute()
-        # Fallback: query common tables directly
-        # Since we can't execute arbitrary SQL, let's handle common queries
-        return _handle_common_queries(question)
-    except Exception as e:
-        return f"Database query failed: {e}"
+    """Handle common database queries with direct Supabase queries."""
+    return _handle_common_queries(question)
 
 
 def _handle_common_queries(question: str) -> str:
