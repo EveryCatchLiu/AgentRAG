@@ -678,8 +678,6 @@ async def send_message(thread_id: str, request: SendMessageRequest, user_id: str
                     continue
 
                 final_answer = content
-                # Push as SSE data so frontend gets the text immediately
-                _push("data", content)
                 break
 
             # Execute native tool_calls

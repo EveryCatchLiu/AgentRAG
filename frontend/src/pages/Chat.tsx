@@ -174,6 +174,22 @@ export default function Chat() {
       console.error("Failed to send message:", err)
     }
 
+    // Reload last assistant message content from DB (preserves reasoning/tool_calls/sources)
+    if (currentThread && user) {
+      try {
+        const res = await fetch(`/api/threads/${currentThread.id}/messages?user_id=${user.id}`)
+        const dbMessages: Message[] = await res.json()
+        const store = useChatStore.getState()
+        const current = [...store.messages]
+        // Replace content of the last assistant message with DB version
+        const dbAssistant = [...dbMessages].reverse().find(m => m.role === "assistant")
+        if (dbAssistant?.content) {
+          current[assistantIndex] = { ...current[assistantIndex], content: dbAssistant.content }
+          store.setMessages(current)
+        }
+      } catch (_) { /* ignore */ }
+    }
+
     clearTimeout(timeout)
     setStreaming(false)
   }
