@@ -77,3 +77,35 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #b8a080;
 }
+
+/* Pixel floating animations */
+@keyframes pixel-float-1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.6; }
+  25% { transform: translate(30px, -40px) rotate(90deg); opacity: 0.9; }
+  50% { transform: translate(-20px, -60px) rotate(180deg); opacity: 0.5; }
+  75% { transform: translate(-35px, -15px) rotate(270deg); opacity: 0.8; }
+}
+
+@keyframes pixel-float-2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); opacity: 0.5; }
+  33% { transform: translate(-40px, -30px) rotate(120deg); opacity: 0.85; }
+  66% { transform: translate(25px, -50px) rotate(240deg); opacity: 0.55; }
+}
+
+@keyframes pixel-float-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.4; }
+  20% { transform: translate(35px, -25px) scale(1.2); opacity: 0.8; }
+  50% { transform: translate(-15px, -55px) scale(0.9); opacity: 0.5; }
+  80% { transform: translate(-30px, -10px) scale(1.1); opacity: 0.7; }
+}
+
+@keyframes pixel-float-4 {
+  0%, 100% { transform: translate(0, 0); opacity: 0.55; }
+  30% { transform: translate(-25px, -45px); opacity: 0.85; }
+  60% { transform: translate(30px, -35px); opacity: 0.5; }
+}
+
+@keyframes pixel-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.5); }
+}
